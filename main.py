@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import logging
 import re
+import sys
 
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
@@ -77,5 +78,20 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    main()
+    if sys.argv[1] == '-d':
+        logger.info('Debug')
+
+        class Dummy(object):
+            pass
+
+        update = Dummy()
+
+        update.inline_query = Dummy()
+
+        update.inline_query.query = sys.argv[2]
+        update.inline_query.answer = lambda *args: None
+
+        inline_query_handler(None, update)
+    else:
+        main()
 
