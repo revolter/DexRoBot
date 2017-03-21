@@ -147,3 +147,7 @@ tags
 pyvenv.cfg
 pip-selfcheck.json
 
+### Custom ###
+# config
+config.cfg
+

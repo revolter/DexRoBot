@@ -4,6 +4,7 @@
 from uuid import uuid4
 
 import argparse
+import configparser
 import html
 import logging
 import re
@@ -17,8 +18,6 @@ import requests
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-
-BOT_TOKEN = '348175336:AAE2DprB0kHWVSFNOKYD4wPK0goQ9fUFqEY'
 
 DEX_URL_FORMAT = 'https://dexonline.ro/definitie/{}/json'
 DEX_DEFINITIONS_XPATH = '//div[@id="resultsTab"]/div[@class="defWrapper"]/p[@class="def"]'
@@ -167,7 +166,23 @@ def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
 
 def main():
-    updater = Updater(BOT_TOKEN)
+    try:
+        config = configparser.ConfigParser()
+
+        config.read('config.cfg')
+
+        botToken = config['Telegram']['Key']
+    except:
+        logger.error('Missing bot token')
+
+        return
+
+    if not botToken:
+        logger.error('Missing bot token')
+
+        return
+
+    updater = Updater(botToken)
 
     dispatcher = updater.dispatcher
 
