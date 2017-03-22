@@ -15,7 +15,7 @@ from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 
 import requests
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,8 @@ def inline_query_handler(bot, update):
             logger.warn('Empty query')
 
             return
+
+    logger.info('{}: {}'.format(update.inline_query.from_user.username, query))
 
     if args.fragment:
         dexUrl = 'debug'
@@ -128,7 +130,8 @@ def inline_query_handler(bot, update):
 
         dexDefinitionHTMLRep = dexDefinitionHTMLRep[:textLimit]
 
-        logger.warn('Text limit: {}'.format(textLimit))
+        if args.debug:
+            logger.warn('Text limit: {}'.format(textLimit))
 
         danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTMLRep)
 
@@ -137,11 +140,13 @@ def inline_query_handler(bot, update):
 
             dexDefinitionHTMLRep = '{}...</{}>'.format(dexDefinitionHTMLRep, startTagName)
 
-        logger.info('URL: {}'.format(dexUrl))
+        if args.debug:
+            logger.info('URL: {}'.format(dexUrl))
 
         dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexUrl)
 
-        logger.info('Result: {}: {}'.format(index, dexDefinitionHTMLRep))
+        if args.debug:
+            logger.info('Result: {}: {}'.format(index, dexDefinitionHTMLRep))
 
         dexDefinitionResult = InlineQueryResultArticle(
             id=uuid4(),
