@@ -176,7 +176,7 @@ def main():
 
         config.read('config.cfg')
 
-        botToken = config['Telegram']['Key']
+        botToken = config['Telegram']['Key' if args.server else 'TestKey']
     except:
         logger.error('Missing bot token')
 
@@ -211,6 +211,8 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--query')
     parser.add_argument('-i', '--index', type=int)
     parser.add_argument('-f', '--fragment')
+
+    parser.add_argument('-s', '--server', action='store_true')
 
     args = parser.parse_args()
 
