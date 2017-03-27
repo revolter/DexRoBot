@@ -195,9 +195,30 @@ def main():
     dispatcher.add_error_handler(error_handler)
 
     if args.debug:
+        logger.info('Started polling')
+
         updater.start_polling(timeout=0.01)
     else:
-        updater.start_polling()
+        if args.server and not args.polling:
+            logger.info('Started webhook')
+
+            if config:
+                webhook = config['Webhook']
+
+                port = int(webhook['Port'])
+                key = webhook['Key']
+                cert = webhook['Cert']
+                url = webhook['Url'] + botToken
+
+                updater.start_webhook(listen='0.0.0.0', port=port, url_path=botToken, key=key, cert=cert, webhook_url=url)
+            else:
+                logger.error('Missing bot webhook config')
+
+                return
+        else:
+            logger.info('Started polling')
+
+            updater.start_polling()
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
@@ -212,6 +233,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--index', type=int)
     parser.add_argument('-f', '--fragment')
 
+    parser.add_argument('-p', '--polling', action='store_true')
     parser.add_argument('-s', '--server', action='store_true')
 
     args = parser.parse_args()
