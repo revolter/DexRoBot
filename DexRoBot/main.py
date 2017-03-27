@@ -78,6 +78,7 @@ def inline_query_handler(bot, update):
     results = list()
 
     for dexRawDefinition in dexRawDefinitions:
+        dexDefinitionId = dexRawDefinition['id']
         dexDefinitionInternalRep = dexRawDefinition['internalRep']
 
         index = dexRawDefinitions.index(dexRawDefinition)
@@ -121,10 +122,12 @@ def inline_query_handler(bot, update):
 
         dexDefinitionHTMLRep = str(dexDefinitionHTML)
 
+        dexDefinitionUrl = '{}/{}'.format(dexUrl, dexDefinitionId)
+
         textLimit = MESSAGE_TEXT_LENGTH_LIMIT
 
         textLimit -= 1 # newline between text and url
-        textLimit -= len(dexUrl) # definition url
+        textLimit -= len(dexDefinitionUrl) # definition url
         textLimit -= 4 # possible end tag
         textLimit -= 3 # ellipsis
 
@@ -141,9 +144,9 @@ def inline_query_handler(bot, update):
             dexDefinitionHTMLRep = '{}...</{}>'.format(dexDefinitionHTMLRep, startTagName)
 
         if args.debug:
-            logger.info('URL: {}'.format(dexUrl))
+            logger.info('URL: {}'.format(dexDefinitionUrl))
 
-        dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexUrl)
+        dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionUrl)
 
         if args.debug:
             logger.info('Result: {}: {}'.format(index, dexDefinitionHTMLRep))
