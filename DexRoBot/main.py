@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 DEX_URL_FORMAT = 'https://dexonline.ro/definitie/{}/json'
 DEX_DEFINITIONS_XPATH = '//div[@id="resultsTab"]/div[@class="defWrapper"]/p[@class="def"]'
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
+DEX_SOURCES_URL = 'https://dexonline.ro/surse'
+DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
 
 ALL_SIGNS_REGEX = re.compile(r'[@\$#]')
 
@@ -101,6 +103,8 @@ def inline_query_handler(bot, update):
 
     for dexRawDefinition in dexRawDefinitions:
         dexDefinitionId = dexRawDefinition['id']
+        dexDefinitionSourceName = dexRawDefinition['sourceName']
+        dexDefinitionAuthor = dexRawDefinition['userNick']
         dexDefinitionInternalRep = dexRawDefinition['internalRep']
 
         index = dexRawDefinitions.index(dexRawDefinition)
@@ -145,11 +149,14 @@ def inline_query_handler(bot, update):
         dexDefinitionHTMLRep = str(dexDefinitionHTML)
 
         dexDefinitionUrl = '{}/{}'.format(dexUrl, dexDefinitionId)
+        dexAuthorUrl = '{}/{}'.format(DEX_AUTHOR_URL, dexDefinitionAuthor)
+
+        dexDefinitionFooter = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dexDefinitionUrl, DEX_SOURCES_URL, dexDefinitionSourceName, dexAuthorUrl, dexDefinitionAuthor)
 
         textLimit = MESSAGE_TEXT_LENGTH_LIMIT
 
         textLimit -= 1 # newline between text and url
-        textLimit -= len(dexDefinitionUrl) # definition url
+        textLimit -= len(dexDefinitionFooter) # definition footer
         textLimit -= 4 # possible end tag
         textLimit -= 3 # ellipsis
 
@@ -168,7 +175,7 @@ def inline_query_handler(bot, update):
         if args.debug:
             logger.info('URL: {}'.format(dexDefinitionUrl))
 
-        dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionUrl)
+        dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionFooter)
 
         if args.debug:
             logger.info('Result: {}: {}'.format(index, dexDefinitionHTMLRep))
