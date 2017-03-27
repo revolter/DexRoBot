@@ -39,18 +39,20 @@ MESSAGE_TEXT_LENGTH_LIMIT = 4096
 MESSAGES_COUNT_LIMIT = 50
 
 def inline_query_handler(bot, update):
+    inlineQuery = update.inline_query
+
     if not args.fragment:
         if args.query:
             query = args.query
         else:
-            query = update.inline_query.query
+            query = inlineQuery.query
 
         if not query:
             logger.warn('Empty query')
 
             return
 
-    logger.info('{}: {}'.format(update.inline_query.from_user.username, query))
+    logger.info('{}: {}'.format(inlineQuery.from_user.username, query))
 
     if args.fragment:
         dexUrl = 'debug'
@@ -166,9 +168,9 @@ def inline_query_handler(bot, update):
     results = results[:MESSAGES_COUNT_LIMIT + 1]
 
     if args.debug:
-        update.inline_query.answer(results, cache_time=0)
+        inlineQuery.answer(results, cache_time=0)
     else:
-        update.inline_query.answer(results)
+        inlineQuery.answer(results)
 
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
