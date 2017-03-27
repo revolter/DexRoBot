@@ -159,7 +159,8 @@ def inline_query_handler(bot, update):
             thumb_url=DEX_THUMBNAIL_URL,
             input_message_content=InputTextMessageContent(
                 message_text=dexDefinitionHTMLRep,
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True
             )
         )
 
