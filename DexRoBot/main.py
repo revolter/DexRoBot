@@ -243,6 +243,11 @@ def main():
                 cert = webhook['Cert']
                 url = webhook['Url'] + botToken
 
+                if args.set_webhook:
+                    logger.info('Updated webhook')
+                else:
+                    updater.bot.setWebhook = (lambda *args, **kwargs: None)
+
                 updater.start_webhook(listen='0.0.0.0', port=port, url_path=botToken, key=key, cert=cert, webhook_url=url)
             else:
                 logger.error('Missing bot webhook config')
@@ -267,6 +272,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--fragment')
 
     parser.add_argument('-p', '--polling', action='store_true')
+    parser.add_argument('-sw', '--set-webhook', action='store_true')
     parser.add_argument('-s', '--server', action='store_true')
 
     args = parser.parse_args()
@@ -282,7 +288,7 @@ if __name__ == '__main__':
 
         update.inline_query = Dummy()
 
-        update.inline_query.answer = lambda *args, **kwargs: None
+        update.inline_query.answer = (lambda *args, **kwargs: None)
 
         inline_query_handler(None, update)
     else:
