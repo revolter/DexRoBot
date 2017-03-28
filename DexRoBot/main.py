@@ -9,6 +9,7 @@ import html
 import logging
 import re
 
+from botanio import botan
 from bs4 import BeautifulSoup, element
 from telegram import InlineQueryResultArticle, InputTextMessageContent, ParseMode
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
@@ -55,6 +56,11 @@ def inline_query_handler(bot, update):
             return
 
     user = inlineQuery.from_user
+
+    if BOTAN_TOKEN:
+        botanTrack = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
+
+        logger.info('Botan track: {}'.format(botanTrack))
 
     userIdentification = '#{}'.format(user.id)
     userName = None
@@ -219,6 +225,17 @@ def main():
         logger.error('Missing bot token')
 
         return
+
+    try:
+        config = configparser.ConfigParser()
+
+        config.read('config.cfg')
+
+        global BOTAN_TOKEN
+
+        BOTAN_TOKEN = config['Botan']['Key']
+    except:
+        logger.info('Missing Botan token')
 
     updater = Updater(botToken)
 
