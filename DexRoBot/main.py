@@ -12,6 +12,7 @@ import re
 from bs4 import BeautifulSoup, element
 from telegram import InlineQueryResultArticle, InputTextMessageContent, ParseMode
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
+from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
 
@@ -37,7 +38,6 @@ ITALIC_TAG_REPLACE = r'<i>\1</i>'
 DANGLING_TAG_REGEX = re.compile(r'<([^\/>]+)>[^<]*$')
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
-MESSAGE_TEXT_LENGTH_LIMIT = 4096
 MESSAGES_COUNT_LIMIT = 50
 
 def inline_query_handler(bot, update):
@@ -153,7 +153,7 @@ def inline_query_handler(bot, update):
 
         dexDefinitionFooter = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dexDefinitionUrl, DEX_SOURCES_URL, dexDefinitionSourceName, dexAuthorUrl, dexDefinitionAuthor)
 
-        textLimit = MESSAGE_TEXT_LENGTH_LIMIT
+        textLimit = MAX_MESSAGE_LENGTH
 
         textLimit -= 1 # newline between text and url
         textLimit -= len(dexDefinitionFooter) # definition footer
