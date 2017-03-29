@@ -57,11 +57,6 @@ def inline_query_handler(bot, update):
 
     user = inlineQuery.from_user
 
-    if BOTAN_TOKEN:
-        botanTrack = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
-
-        logger.info('Botan track: {}'.format(botanTrack))
-
     userIdentification = '#{}'.format(user.id)
     userName = None
 
@@ -110,6 +105,20 @@ def inline_query_handler(bot, update):
         dexRawDefinitions = [dexRawDefinitions[args.index]]
 
     results = list()
+
+    offsetString = update.inline_query.offset
+    offset = 0
+
+    if offsetString:
+        offset = int(offsetString)
+
+        if offset < len(dexRawDefinitions):
+            dexRawDefinitions = dexRawDefinitions[offset + 1:]
+    else:
+        if BOTAN_TOKEN:
+            botanTrack = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
+
+            logger.info('Botan track: {}'.format(botanTrack))
 
     for dexRawDefinition in dexRawDefinitions:
         dexDefinitionIndex = dexRawDefinition['index']
@@ -197,6 +206,8 @@ def inline_query_handler(bot, update):
 
         results.append(dexDefinitionResult)
 
+    resultsCount = len(results)
+
     results = results[:MESSAGES_COUNT_LIMIT + 1]
 
     cacheTime = 24 * 60 * 60
@@ -204,7 +215,12 @@ def inline_query_handler(bot, update):
     if args.debug:
         cacheTime = 0
 
-    inlineQuery.answer(results, cache_time=cacheTime)
+    nextOffset = None
+
+    if resultsCount > len(results):
+        nextOffset = offset + MESSAGES_COUNT_LIMIT
+
+    inlineQuery.answer(results, cache_time=cacheTime, next_offset=nextOffset)
 
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
