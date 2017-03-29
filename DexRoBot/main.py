@@ -172,18 +172,12 @@ def inline_query_handler(bot, update):
 
         dexDefinitionHTMLRep = dexDefinitionHTMLRep[:textLimit]
 
-        if args.debug:
-            logger.warn('Text limit: {}'.format(textLimit))
-
         danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTMLRep)
 
         if danglingTagsGroups is not None:
             startTagName = danglingTagsGroups.group(1)
 
             dexDefinitionHTMLRep = '{}...</{}>'.format(dexDefinitionHTMLRep, startTagName)
-
-        if args.debug:
-            logger.info('URL: {}'.format(dexDefinitionUrl))
 
         dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionFooter)
 
@@ -314,4 +308,3 @@ if __name__ == '__main__':
         inline_query_handler(None, update)
     else:
         main()
-
