@@ -97,6 +97,10 @@ def inline_query_handler(bot, update):
 
         dexUrl = dexAPIUrl[:- 5] # /json
 
+    # set the index of the definitions
+    for index in range(len(dexRawDefinitions)):
+        dexRawDefinitions[index]['index'] = index
+
     if args.index is not None:
         if args.index >= len(dexRawDefinitions):
             logger.warn('Index out of bounds')
@@ -108,19 +112,19 @@ def inline_query_handler(bot, update):
     results = list()
 
     for dexRawDefinition in dexRawDefinitions:
+        dexDefinitionIndex = dexRawDefinition['index']
+
         dexDefinitionId = dexRawDefinition['id']
         dexDefinitionSourceName = dexRawDefinition['sourceName']
         dexDefinitionAuthor = dexRawDefinition['userNick']
         dexDefinitionInternalRep = dexRawDefinition['internalRep']
-
-        index = dexRawDefinitions.index(dexRawDefinition)
 
         dexDefinitionTitle = dexDefinitionInternalRep
 
         dexDefinitionTitle = ALL_SIGNS_REGEX.sub('', dexDefinitionTitle)
 
         if args.debug:
-            dexDefinitionTitle = '{}: {}'.format(index, dexDefinitionTitle)
+            dexDefinitionTitle = '{}: {}'.format(dexDefinitionIndex, dexDefinitionTitle)
 
         dexDefinitionTitle = dexDefinitionTitle[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
 
