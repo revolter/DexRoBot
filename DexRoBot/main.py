@@ -22,7 +22,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 logger = logging.getLogger(__name__)
 
 DEX_URL_FORMAT = 'https://dexonline.ro/definitie/{}/json'
-DEX_DEFINITIONS_XPATH = '//div[@id="resultsTab"]/div[@class="defWrapper"]/p[@class="def"]'
+
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
 DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
