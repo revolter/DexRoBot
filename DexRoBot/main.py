@@ -199,10 +199,12 @@ def inline_query_handler(bot, update):
 
     results = results[:MESSAGES_COUNT_LIMIT + 1]
 
+    cacheTime = 24 * 60 * 60
+
     if args.debug:
-        inlineQuery.answer(results, cache_time=0)
-    else:
-        inlineQuery.answer(results)
+        cacheTime = 0
+
+    inlineQuery.answer(results, cache_time=cacheTime)
 
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
