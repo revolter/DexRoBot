@@ -107,6 +107,9 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
+# SageMath parsed files
+*.sage.py
+
 # dotenv
 .env
 
@@ -147,7 +150,8 @@ tags
 pyvenv.cfg
 pip-selfcheck.json
 
+# End of https://www.gitignore.io/api/python,virtualenv,macos,vim
+
 ### Custom ###
 # config
 config.cfg
-
