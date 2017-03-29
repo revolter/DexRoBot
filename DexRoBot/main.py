@@ -21,7 +21,10 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=lo
 
 logger = logging.getLogger(__name__)
 
-DEX_URL_FORMAT = 'https://dexonline.ro/definitie/{}/json'
+DEX_BASE_URL = 'https://dexonline.ro'
+
+DEX_API_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'definitie/{}/json')
+DEX_SEARCH_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'text/{}')
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
@@ -38,8 +41,26 @@ ITALIC_TAG_REPLACE = r'<i>\1</i>'
 
 DANGLING_TAG_REGEX = re.compile(r'<([^\/>]+)>[^<]*$')
 
+COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'\/\w+\s*')
+
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
+
+def start_handler(bot, update):
+    message = update.message
+    command = message.text
+    chatId = message.chat_id
+
+    query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
+
+    if not query:
+        return
+
+    url = DEX_SEARCH_URL_FORMAT.format(query)
+
+    reply = 'Niciun rezultat găsit pentru "{}". Incearcă o căutare in tot textul definițiilor [aici]({}).'.format(query, url)
+
+    bot.sendMessage(chat_id=chatId, text=reply, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
 
 def inline_query_handler(bot, update):
     inlineQuery = update.inline_query
@@ -84,7 +105,7 @@ def inline_query_handler(bot, update):
             'internalRep': args.fragment
         }]
     else:
-        dexAPIUrl = DEX_URL_FORMAT.format(query)
+        dexAPIUrl = DEX_API_URL_FORMAT.format(query)
 
         dexRawResponse = requests.get(dexAPIUrl).json()
 
@@ -208,7 +229,14 @@ def inline_query_handler(bot, update):
 
     resultsCount = len(results)
 
-    results = results[:MESSAGES_COUNT_LIMIT + 1]
+    noResultsText = None
+    noResultsParameter = None
+
+    if resultsCount == 0:
+        noResultsText = 'Niciun rezultat'
+        noResultsParameter = query
+    else:
+        results = results[:MESSAGES_COUNT_LIMIT + 1]
 
     cacheTime = 24 * 60 * 60
 
@@ -220,7 +248,13 @@ def inline_query_handler(bot, update):
     if resultsCount > len(results):
         nextOffset = offset + MESSAGES_COUNT_LIMIT
 
-    inlineQuery.answer(results, cache_time=cacheTime, next_offset=nextOffset)
+    inlineQuery.answer(
+        results,
+        cache_time=cacheTime,
+        next_offset=nextOffset,
+        switch_pm_text=noResultsText,
+        switch_pm_parameter=noResultsParameter
+    )
 
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
@@ -256,6 +290,8 @@ def main():
     updater = Updater(botToken)
 
     dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler('start', start_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
     dispatcher.add_error_handler(error_handler)
