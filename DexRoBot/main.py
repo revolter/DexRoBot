@@ -40,6 +40,7 @@ BOLD_TAG_REPLACE = r'<b>\1</b>'
 ITALIC_TAG_REPLACE = r'<i>\1</i>'
 
 DANGLING_TAG_REGEX = re.compile(r'<([^\/>]+)>[^<]*$')
+UNFINISHED_TAG_REGEX = re.compile(r'<\/?(?:\w+)?$')
 
 COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'\/\w+\s*')
 
@@ -221,6 +222,8 @@ def inline_query_handler(bot, update):
         textLimit -= 3 # ellipsis
 
         dexDefinitionHTMLRep = dexDefinitionHTMLRep[:textLimit]
+
+        dexDefinitionHTMLRep = UNFINISHED_TAG_REGEX.sub('', dexDefinitionHTMLRep)
 
         danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTMLRep)
 
