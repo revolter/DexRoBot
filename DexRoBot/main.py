@@ -80,7 +80,9 @@ def start_handler(bot, update):
 def inline_query_handler(bot, update):
     inlineQuery = update.inline_query
 
-    if not args.fragment:
+    if args.fragment:
+        query = None
+    else:
         if args.query:
             query = args.query
         else:
@@ -117,7 +119,10 @@ def inline_query_handler(bot, update):
         dexUrl = 'debug'
 
         dexRawDefinitions = [{
-            'internalRep': args.fragment
+            'id': 0,
+            'internalRep': args.fragment,
+            'sourceName': None,
+            'userNick': None
         }]
     else:
         dexAPIUrl = DEX_API_URL_FORMAT.format(query)
