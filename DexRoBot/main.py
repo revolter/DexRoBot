@@ -17,6 +17,8 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
 
+BOTAN_TOKEN = None
+
 LOGS_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 DEX_BASE_URL = 'https://dexonline.ro'
@@ -377,7 +379,14 @@ if __name__ == '__main__':
 
         update.inline_query = Dummy()
 
+        update.inline_query.from_user = Dummy()
+        update.inline_query.offset = None
         update.inline_query.answer = (lambda *args, **kwargs: None)
+
+        update.inline_query.from_user.id = None
+        update.inline_query.from_user.first_name = None
+        update.inline_query.from_user.last_name = None
+        update.inline_query.from_user.username = None
 
         inline_query_handler(None, update)
     else:
