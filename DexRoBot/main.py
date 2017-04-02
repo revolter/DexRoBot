@@ -68,7 +68,12 @@ def start_handler(bot, update):
 
     reply = 'Niciun rezultat găsit pentru "{}". Incearcă o căutare in tot textul definițiilor [aici]({}).'.format(query, url)
 
-    bot.sendMessage(chat_id=chatId, text=reply, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+    bot.sendMessage(
+        chat_id=chatId,
+        text=reply,
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=False
+    )
 
 def inline_query_handler(bot, update):
     inlineQuery = update.inline_query
@@ -119,7 +124,7 @@ def inline_query_handler(bot, update):
 
         dexRawDefinitions = dexRawResponse['definitions']
 
-        dexUrl = dexAPIUrl[:- 5] # /json
+        dexUrl = dexAPIUrl[:-5] # /json
 
     # set the index of the definitions
     for index in range(len(dexRawDefinitions)):
@@ -325,7 +330,14 @@ def main():
                 else:
                     updater.bot.setWebhook = (lambda *args, **kwargs: None)
 
-                updater.start_webhook(listen='0.0.0.0', port=port, url_path=botToken, key=key, cert=cert, webhook_url=url)
+                updater.start_webhook(
+                    listen='0.0.0.0',
+                    port=port,
+                    url_path=botToken,
+                    key=key,
+                    cert=cert,
+                    webhook_url=url
+                )
             else:
                 logger.error('Missing bot webhook config')
 
