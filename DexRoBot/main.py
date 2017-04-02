@@ -18,6 +18,11 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 import requests
 
 BOTAN_TOKEN = None
+GOOGLE_TOKEN = None
+
+GOOGLE_HEADERS = {'User-Agent': 'DexRoBot'}
+
+GOOGLE_ANALYTICS_BASE_URL = "https://www.google-analytics.com/collect?v=1&tid={}&cid={}&t=event&ec={}&ea={}"
 
 LOGS_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
@@ -161,6 +166,14 @@ def inline_query_handler(bot, update):
             botanTrack = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
 
             logger.info('Botan track: {}'.format(botanTrack))
+
+        if GOOGLE_TOKEN:
+            googleAnalyticsURL = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
+
+            googleAnalyticsResponse = requests.get(googleAnalyticsURL, headers=GOOGLE_HEADERS)
+
+            if not str(googleAnalyticsResponse.status_code).startswith('2'):
+                logger.error('Google analytics error: {}: {}').format(googleAnalyticsResponse.status_code, googleAnalyticsResponse.text)
 
     for dexRawDefinition in dexRawDefinitions:
         dexDefinitionIndex = dexRawDefinition['index']
@@ -309,6 +322,17 @@ def main():
         BOTAN_TOKEN = config['Botan']['Key']
     except:
         logger.info('Missing Botan token')
+
+    try:
+        config = configparser.ConfigParser()
+
+        config.read('config.cfg')
+
+        global GOOGLE_TOKEN
+
+        GOOGLE_TOKEN = config['Google']['Key']
+    except:
+        logger.info('Missing Google Analytics token')
 
     updater = Updater(botToken)
 
