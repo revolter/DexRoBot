@@ -17,9 +17,7 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
 
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-logger = logging.getLogger(__name__)
+LOGS_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 DEX_BASE_URL = 'https://dexonline.ro'
 
@@ -45,6 +43,16 @@ COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'\/\w+\s*')
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
+
+logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+errorHandler = logging.FileHandler('errors.log')
+errorHandler.setFormatter(logging.Formatter(LOGS_FORMAT))
+errorHandler.setLevel(logging.ERROR)
+
+logger.addHandler(errorHandler)
 
 def start_handler(bot, update):
     message = update.message
