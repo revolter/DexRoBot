@@ -5,12 +5,13 @@ from uuid import uuid4
 
 import argparse
 import configparser
-import html
 import logging
 import re
 
 from botanio import botan
-from bs4 import BeautifulSoup, element
+
+from lxml import etree, html
+
 from telegram import InlineQueryResultArticle, InputTextMessageContent, ParseMode
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 from telegram.constants import MAX_MESSAGE_LENGTH
@@ -34,15 +35,6 @@ DEX_SEARCH_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'text/{}')
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
 DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
-
-ALL_SIGNS_REGEX = re.compile(r'[@\$#]')
-
-AT_SIGN_REGEX = re.compile(r'@([^@]+)@')
-DOLLAR_SIGN_REGEX = re.compile(r'\$([^\$]+)\$')
-POUND_SIGN_REGEX = re.compile(r'(?<!\\)#((?:[^#\\]|\\.)*)(?<!\\)#')
-
-BOLD_TAG_REPLACE = r'<b>\1</b>'
-ITALIC_TAG_REPLACE = r'<i>\1</i>'
 
 DANGLING_TAG_REGEX = re.compile(r'<([^\/>]+)>[^<]*$')
 UNFINISHED_TAG_REGEX = re.compile(r'<\/?(?:\w+)?$')
@@ -127,7 +119,7 @@ def inline_query_handler(bot, update):
 
         dexRawDefinitions = [{
             'id': 0,
-            'internalRep': args.fragment,
+            'htmlRep': args.fragment,
             'sourceName': None,
             'userNick': None
         }]
@@ -182,11 +174,29 @@ def inline_query_handler(bot, update):
         dexDefinitionId = dexRawDefinition['id']
         dexDefinitionSourceName = dexRawDefinition['sourceName']
         dexDefinitionAuthor = dexRawDefinition['userNick']
-        dexDefinitionInternalRep = dexRawDefinition['internalRep']
+        dexDefinitionHTMLRep = dexRawDefinition['htmlRep']
 
-        dexDefinitionTitle = dexDefinitionInternalRep
+        elements = html.fragments_fromstring(dexDefinitionHTMLRep)
 
-        dexDefinitionTitle = ALL_SIGNS_REGEX.sub('', dexDefinitionTitle)
+        dexDefinitionHTML = ''
+        dexDefinitionTitle = ''
+
+        for child in elements:
+            etree.strip_tags(child, '*')
+
+            if not child.tag in ['b', 'i']:
+                child.tag = 'i'
+
+            child.attrib.clear() # etree.strip_attributes(child, '*') should work too
+
+            childString = html.tostring(child).decode()
+
+            dexDefinitionHTML = '{}{}'.format(dexDefinitionHTML, childString)
+
+            dexDefinitionTitle = '{}{}'.format(dexDefinitionTitle, child.text_content())
+
+            if child.tail:
+                dexDefinitionTitle = '{}{}'.format(dexDefinitionTitle, child.tail)
 
         if args.debug:
             dexDefinitionTitle = '{}: {}'.format(dexDefinitionIndex, dexDefinitionTitle)
@@ -196,32 +206,6 @@ def inline_query_handler(bot, update):
         if len(dexDefinitionTitle) >= MESSAGE_TITLE_LENGTH_LIMIT:
             dexDefinitionTitle[:-3] # ellipsis
             dexDefinitionTitle = '{}...'.format(dexDefinitionTitle)
-
-        dexDefinitionHTML = dexDefinitionInternalRep
-
-        dexDefinitionHTML = dexDefinitionHTML.replace('&#', '&\#') # escape # characters
-
-        dexDefinitionHTML = html.escape(dexDefinitionHTML) # escape html entities
-
-        dexDefinitionHTML = AT_SIGN_REGEX.sub(BOLD_TAG_REPLACE, dexDefinitionHTML) # replace @ pairs with b html tags
-        dexDefinitionHTML = DOLLAR_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTML) # replace $ pairs with i hmtl tags
-        dexDefinitionHTML = POUND_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTML) # replace # pairs with i hmtl tags
-
-        dexDefinitionHTML = dexDefinitionHTML.replace('\#', '#') # unescape # characters
-
-        dexDefinitionHTML = html.unescape(dexDefinitionHTML) # unescape html entities
-
-        dexDefinitionHTML = BeautifulSoup(dexDefinitionHTML, 'html.parser')
-
-        # remove nested tags
-        for tag in dexDefinitionHTML:
-            if not isinstance(tag, element.NavigableString):
-                if len(tag.contents) > 0:
-                    for subtag in tag.contents:
-                        if not isinstance(subtag, element.NavigableString):
-                            subtag.unwrap()
-
-        dexDefinitionHTML = str(dexDefinitionHTML)
 
         dexDefinitionUrl = '{}/{}'.format(dexUrl, dexDefinitionId)
         dexAuthorUrl = '{}/{}'.format(DEX_AUTHOR_URL, dexDefinitionAuthor)
