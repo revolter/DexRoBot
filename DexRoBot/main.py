@@ -36,10 +36,10 @@ DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
 DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
 
-DANGLING_TAG_REGEX = re.compile(r'<([^\/>]+)>[^<]*$')
-UNFINISHED_TAG_REGEX = re.compile(r'<\/?(?:\w+)?$')
+DANGLING_TAG_REGEX = re.compile(r'<([^/>]+)>[^<]*$')
+UNFINISHED_TAG_REGEX = re.compile(r'</?(?:\w+)?$')
 
-COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'\/\w+\s*')
+COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'/\w+\s*')
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
