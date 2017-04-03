@@ -101,25 +101,26 @@ def inline_query_handler(bot, update):
 
     user = inlineQuery.from_user
 
-    userIdentification = '#{}'.format(user.id)
-    userName = None
+    if not args.server:
+        userIdentification = '#{}'.format(user.id)
+        userName = None
 
-    if user.first_name and user.last_name:
-        userName = '{} {}'.format(user.first_name, user.last_name)
-    elif user.first_name:
-        userName = user.first_name
-    elif user.last_name:
-        userName = user.last_name
+        if user.first_name and user.last_name:
+            userName = '{} {}'.format(user.first_name, user.last_name)
+        elif user.first_name:
+            userName = user.first_name
+        elif user.last_name:
+            userName = user.last_name
 
-    if userName:
-        userIdentification = '{}: {}'.format(userIdentification, userName)
+        if userName:
+            userIdentification = '{}: {}'.format(userIdentification, userName)
 
-    if user.username:
-        userIdentification = '{} (@{})'.format(userIdentification, user.username)
+        if user.username:
+            userIdentification = '{} (@{})'.format(userIdentification, user.username)
 
-    userIdentification = '{}:'.format(userIdentification)
+        userIdentification = '{}:'.format(userIdentification)
 
-    logger.info('{} {}'.format(userIdentification, query))
+        logger.info('{} {}'.format(userIdentification, query))
 
     if args.fragment:
         dexUrl = 'debug'
