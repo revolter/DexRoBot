@@ -95,7 +95,7 @@ def inline_query_handler(bot, update):
             query = inlineQuery.query
 
         if not query:
-            logger.warn('Empty query')
+            logger.warning('Empty query')
 
             return
 
@@ -146,7 +146,7 @@ def inline_query_handler(bot, update):
 
     if args.index is not None:
         if args.index >= len(dexRawDefinitions):
-            logger.warn('Index out of bounds')
+            logger.warning('Index out of bounds')
 
             return
 
