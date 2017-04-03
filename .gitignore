@@ -155,3 +155,6 @@ pip-selfcheck.json
 ### Custom ###
 # config
 config.cfg
+
+# PyCharm
+.idea
