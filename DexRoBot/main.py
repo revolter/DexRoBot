@@ -197,21 +197,21 @@ def inline_query_handler(bot, update):
             dexDefinitionTitle[:-3] # ellipsis
             dexDefinitionTitle = '{}...'.format(dexDefinitionTitle)
 
-        dexDefinitionHTMLRep = dexDefinitionInternalRep
+        dexDefinitionHTML = dexDefinitionInternalRep
 
-        dexDefinitionHTMLRep = dexDefinitionHTMLRep.replace('&#', '&\#') # escape # characters
+        dexDefinitionHTML = dexDefinitionHTML.replace('&#', '&\#') # escape # characters
 
-        dexDefinitionHTMLRep = html.escape(dexDefinitionHTMLRep) # escape html entities
+        dexDefinitionHTML = html.escape(dexDefinitionHTML) # escape html entities
 
-        dexDefinitionHTMLRep = AT_SIGN_REGEX.sub(BOLD_TAG_REPLACE, dexDefinitionHTMLRep) # replace @ pairs with b html tags
-        dexDefinitionHTMLRep = DOLLAR_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTMLRep) # replace $ pairs with i hmtl tags
-        dexDefinitionHTMLRep = POUND_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTMLRep) # replace # pairs with i hmtl tags
+        dexDefinitionHTML = AT_SIGN_REGEX.sub(BOLD_TAG_REPLACE, dexDefinitionHTML) # replace @ pairs with b html tags
+        dexDefinitionHTML = DOLLAR_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTML) # replace $ pairs with i hmtl tags
+        dexDefinitionHTML = POUND_SIGN_REGEX.sub(ITALIC_TAG_REPLACE, dexDefinitionHTML) # replace # pairs with i hmtl tags
 
-        dexDefinitionHTMLRep = dexDefinitionHTMLRep.replace('\#', '#') # unescape # characters
+        dexDefinitionHTML = dexDefinitionHTML.replace('\#', '#') # unescape # characters
 
-        dexDefinitionHTMLRep = html.unescape(dexDefinitionHTMLRep) # unescape html entities
+        dexDefinitionHTML = html.unescape(dexDefinitionHTML) # unescape html entities
 
-        dexDefinitionHTML = BeautifulSoup(dexDefinitionHTMLRep, 'html.parser')
+        dexDefinitionHTML = BeautifulSoup(dexDefinitionHTML, 'html.parser')
 
         # remove nested tags
         for tag in dexDefinitionHTML:
@@ -221,7 +221,7 @@ def inline_query_handler(bot, update):
                         if not isinstance(subtag, element.NavigableString):
                             subtag.unwrap()
 
-        dexDefinitionHTMLRep = str(dexDefinitionHTML)
+        dexDefinitionHTML = str(dexDefinitionHTML)
 
         dexDefinitionUrl = '{}/{}'.format(dexUrl, dexDefinitionId)
         dexAuthorUrl = '{}/{}'.format(DEX_AUTHOR_URL, dexDefinitionAuthor)
@@ -235,28 +235,28 @@ def inline_query_handler(bot, update):
         textLimit -= 4 # possible end tag
         textLimit -= 3 # ellipsis
 
-        dexDefinitionHTMLRep = dexDefinitionHTMLRep[:textLimit]
+        dexDefinitionHTML = dexDefinitionHTML[:textLimit]
 
-        dexDefinitionHTMLRep = UNFINISHED_TAG_REGEX.sub('', dexDefinitionHTMLRep)
+        dexDefinitionHTML = UNFINISHED_TAG_REGEX.sub('', dexDefinitionHTML)
 
-        danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTMLRep)
+        danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTML)
 
         if danglingTagsGroups is not None:
             startTagName = danglingTagsGroups.group(1)
 
-            dexDefinitionHTMLRep = '{}...</{}>'.format(dexDefinitionHTMLRep, startTagName)
+            dexDefinitionHTML = '{}...</{}>'.format(dexDefinitionHTML, startTagName)
 
-        dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionFooter)
+        dexDefinitionHTML = '{}\n{}'.format(dexDefinitionHTML, dexDefinitionFooter)
 
         if args.debug:
-            logger.info('Result: {}: {}'.format(dexDefinitionIndex, dexDefinitionHTMLRep))
+            logger.info('Result: {}: {}'.format(dexDefinitionIndex, dexDefinitionHTML))
 
         dexDefinitionResult = InlineQueryResultArticle(
             id=uuid4(),
             title=dexDefinitionTitle,
             thumb_url=DEX_THUMBNAIL_URL,
             input_message_content=InputTextMessageContent(
-                message_text=dexDefinitionHTMLRep,
+                message_text=dexDefinitionHTML,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True
             )
