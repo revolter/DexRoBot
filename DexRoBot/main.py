@@ -57,7 +57,7 @@ logger.addHandler(errorHandler)
 def start_handler(bot, update):
     message = update.message
     command = message.text
-    chatId = message.chat_id
+    chat_id = message.chat_id
 
     query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
 
@@ -69,14 +69,14 @@ def start_handler(bot, update):
     reply = 'Niciun rezultat găsit pentru "{}". Incearcă o căutare in tot textul definițiilor [aici]({}).'.format(query, url)
 
     bot.sendMessage(
-        chat_id=chatId,
+        chat_id=chat_id,
         text=reply,
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=False
     )
 
 def inline_query_handler(bot, update):
-    inlineQuery = update.inline_query
+    inline_query = update.inline_query
 
     if args.fragment:
         query = None
@@ -84,102 +84,102 @@ def inline_query_handler(bot, update):
         if args.query:
             query = args.query
         else:
-            query = inlineQuery.query
+            query = inline_query.query
 
         if not query:
             logger.warning('Empty query')
 
             return
 
-    user = inlineQuery.from_user
+    user = inline_query.from_user
 
     if not args.server:
-        userIdentification = '#{}'.format(user.id)
-        userName = None
+        user_identification = '#{}'.format(user.id)
+        user_name = None
 
         if user.first_name and user.last_name:
-            userName = '{} {}'.format(user.first_name, user.last_name)
+            user_name = '{} {}'.format(user.first_name, user.last_name)
         elif user.first_name:
-            userName = user.first_name
+            user_name = user.first_name
         elif user.last_name:
-            userName = user.last_name
+            user_name = user.last_name
 
-        if userName:
-            userIdentification = '{}: {}'.format(userIdentification, userName)
+        if user_name:
+            user_identification = '{}: {}'.format(user_identification, user_name)
 
         if user.username:
-            userIdentification = '{} (@{})'.format(userIdentification, user.username)
+            user_identification = '{} (@{})'.format(user_identification, user.username)
 
-        userIdentification = '{}:'.format(userIdentification)
+        user_identification = '{}:'.format(user_identification)
 
-        logger.info('{} {}'.format(userIdentification, query))
+        logger.info('{} {}'.format(user_identification, query))
 
     if args.fragment:
-        dexUrl = 'debug'
+        dex_url = 'debug'
 
-        dexRawDefinitions = [{
+        dex_raw_definitions = [{
             'id': 0,
             'htmlRep': args.fragment,
             'sourceName': None,
             'userNick': None
         }]
     else:
-        dexAPIUrl = DEX_API_URL_FORMAT.format(query)
+        dex_api_url = DEX_API_URL_FORMAT.format(query)
 
-        dexRawResponse = requests.get(dexAPIUrl).json()
+        dex_raw_response = requests.get(dex_api_url).json()
 
-        dexRawDefinitions = dexRawResponse['definitions']
+        dex_raw_definitions = dex_raw_response['definitions']
 
-        dexUrl = dexAPIUrl[:-5] # /json
+        dex_url = dex_api_url[:-5] # /json
 
     # set the index of the definitions
-    for index in range(len(dexRawDefinitions)):
-        dexRawDefinitions[index]['index'] = index
+    for index in range(len(dex_raw_definitions)):
+        dex_raw_definitions[index]['index'] = index
 
     if args.index is not None:
-        if args.index >= len(dexRawDefinitions):
+        if args.index >= len(dex_raw_definitions):
             logger.warning('Index out of bounds')
 
             return
 
-        dexRawDefinitions = [dexRawDefinitions[args.index]]
+        dex_raw_definitions = [dex_raw_definitions[args.index]]
 
     results = list()
 
-    offsetString = update.inline_query.offset
+    offset_string = update.inline_query.offset
     offset = 0
 
-    if offsetString:
-        offset = int(offsetString)
+    if offset_string:
+        offset = int(offset_string)
 
-        if offset < len(dexRawDefinitions):
-            dexRawDefinitions = dexRawDefinitions[offset + 1:]
+        if offset < len(dex_raw_definitions):
+            dex_raw_definitions = dex_raw_definitions[offset + 1:]
     else:
         if BOTAN_TOKEN:
-            botanTrack = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
+            botan_track = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
 
-            logger.info('Botan track: {}'.format(botanTrack))
+            logger.info('Botan track: {}'.format(botan_track))
 
         if GOOGLE_TOKEN:
-            googleAnalyticsURL = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
+            google_analytics_url = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
 
-            googleAnalyticsResponse = requests.get(googleAnalyticsURL, headers=GOOGLE_HEADERS)
+            google_analytics_response = requests.get(google_analytics_url, headers=GOOGLE_HEADERS)
 
-            if not str(googleAnalyticsResponse.status_code).startswith('2'):
-                logger.error('Google analytics error: {}: {}').format(googleAnalyticsResponse.status_code, googleAnalyticsResponse.text)
+            if not str(google_analytics_response.status_code).startswith('2'):
+                logger.error('Google analytics error: {}: {}').format(google_analytics_response.status_code, google_analytics_response.text)
 
-    for dexRawDefinition in dexRawDefinitions:
-        dexDefinitionIndex = dexRawDefinition['index']
+    for dex_raw_definition in dex_raw_definitions:
+        dex_definition_index = dex_raw_definition['index']
 
-        dexDefinitionId = dexRawDefinition['id']
-        dexDefinitionSourceName = dexRawDefinition['sourceName']
-        dexDefinitionAuthor = dexRawDefinition['userNick']
-        dexDefinitionHTMLRep = dexRawDefinition['htmlRep']
+        dex_definition_id = dex_raw_definition['id']
+        dex_definition_source_name = dex_raw_definition['sourceName']
+        dex_definition_author = dex_raw_definition['userNick']
+        dex_definition_html_rep = dex_raw_definition['htmlRep']
 
-        elements = html.fragments_fromstring(dexDefinitionHTMLRep)
+        elements = html.fragments_fromstring(dex_definition_html_rep)
 
-        dexDefinitionHTML = ''
-        dexDefinitionTitle = ''
+        dex_definition_html = ''
+        dex_definition_title = ''
 
         for child in elements:
             etree.strip_tags(child, '*')
@@ -189,92 +189,92 @@ def inline_query_handler(bot, update):
 
             child.attrib.clear() # etree.strip_attributes(child, '*') should work too
 
-            childString = html.tostring(child).decode()
+            child_string = html.tostring(child).decode()
 
-            dexDefinitionHTML = '{}{}'.format(dexDefinitionHTML, childString)
+            dex_definition_html = '{}{}'.format(dex_definition_html, child_string)
 
-            dexDefinitionTitle = '{}{}'.format(dexDefinitionTitle, child.text_content())
+            dex_definition_title = '{}{}'.format(dex_definition_title, child.text_content())
 
             if child.tail:
-                dexDefinitionTitle = '{}{}'.format(dexDefinitionTitle, child.tail)
+                dex_definition_title = '{}{}'.format(dex_definition_title, child.tail)
 
         if args.debug:
-            dexDefinitionTitle = '{}: {}'.format(dexDefinitionIndex, dexDefinitionTitle)
+            dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
 
-        dexDefinitionTitle = dexDefinitionTitle[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
+        dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
 
-        if len(dexDefinitionTitle) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dexDefinitionTitle[:-3] # ellipsis
-            dexDefinitionTitle = '{}...'.format(dexDefinitionTitle)
+        if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
+            dex_definition_title[:-3] # ellipsis
+            dex_definition_title = '{}...'.format(dex_definition_title)
 
-        dexDefinitionUrl = '{}/{}'.format(dexUrl, dexDefinitionId)
-        dexAuthorUrl = '{}/{}'.format(DEX_AUTHOR_URL, dexDefinitionAuthor)
+        dex_definition_url = '{}/{}'.format(dex_url, dex_definition_id)
+        dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, dex_definition_author)
 
-        dexDefinitionFooter = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dexDefinitionUrl, DEX_SOURCES_URL, dexDefinitionSourceName, dexAuthorUrl, dexDefinitionAuthor)
+        dex_definition_footer = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name, dex_author_url, dex_definition_author)
 
-        textLimit = MAX_MESSAGE_LENGTH
+        text_limit = MAX_MESSAGE_LENGTH
 
-        textLimit -= 1 # newline between text and url
-        textLimit -= len(dexDefinitionFooter) # definition footer
-        textLimit -= 4 # possible end tag
-        textLimit -= 3 # ellipsis
+        text_limit -= 1 # newline between text and url
+        text_limit -= len(dex_definition_footer) # definition footer
+        text_limit -= 4 # possible end tag
+        text_limit -= 3 # ellipsis
 
-        dexDefinitionHTML = dexDefinitionHTML[:textLimit]
+        dex_definition_html = dex_definition_html[:text_limit]
 
-        dexDefinitionHTML = UNFINISHED_TAG_REGEX.sub('', dexDefinitionHTML)
+        dex_definition_html = UNFINISHED_TAG_REGEX.sub('', dex_definition_html)
 
-        danglingTagsGroups = DANGLING_TAG_REGEX.search(dexDefinitionHTML)
+        dangling_tags_groups = DANGLING_TAG_REGEX.search(dex_definition_html)
 
-        if danglingTagsGroups is not None:
-            startTagName = danglingTagsGroups.group(1)
+        if dangling_tags_groups is not None:
+            start_tag_name = dangling_tags_groups.group(1)
 
-            dexDefinitionHTML = '{}...</{}>'.format(dexDefinitionHTML, startTagName)
+            dex_definition_html = '{}...</{}>'.format(dex_definition_html, start_tag_name)
 
-        dexDefinitionHTML = '{}\n{}'.format(dexDefinitionHTML, dexDefinitionFooter)
+        dex_definition_html = '{}\n{}'.format(dex_definition_html, dex_definition_footer)
 
         if args.debug:
-            logger.info('Result: {}: {}'.format(dexDefinitionIndex, dexDefinitionHTML))
+            logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
 
-        dexDefinitionResult = InlineQueryResultArticle(
+        dex_definition_result = InlineQueryResultArticle(
             id=uuid4(),
-            title=dexDefinitionTitle,
+            title=dex_definition_title,
             thumb_url=DEX_THUMBNAIL_URL,
             input_message_content=InputTextMessageContent(
-                message_text=dexDefinitionHTML,
+                message_text=dex_definition_html,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True
             )
         )
 
-        results.append(dexDefinitionResult)
+        results.append(dex_definition_result)
 
-    resultsCount = len(results)
+    results_count = len(results)
 
-    noResultsText = None
-    noResultsParameter = None
+    no_results_text = None
+    no_results_parameter = None
 
-    if resultsCount == 0:
-        noResultsText = 'Niciun rezultat'
-        noResultsParameter = query
+    if results_count == 0:
+        no_results_text = 'Niciun rezultat'
+        no_results_parameter = query
     else:
         results = results[:MESSAGES_COUNT_LIMIT + 1]
 
-    cacheTime = 24 * 60 * 60
+    cache_time = 24 * 60 * 60
 
     if args.debug:
-        cacheTime = 0
+        cache_time = 0
 
-    nextOffset = None
+    next_offset = None
 
-    if resultsCount > len(results):
-        nextOffset = offset + MESSAGES_COUNT_LIMIT
+    if results_count > len(results):
+        next_offset = offset + MESSAGES_COUNT_LIMIT
 
-    inlineQuery.answer(
+    inline_query.answer(
         results,
-        cache_time=cacheTime,
-        next_offset=nextOffset,
-        switch_pm_text=noResultsText,
-        switch_pm_parameter=noResultsParameter
+        cache_time=cache_time,
+        next_offset=next_offset,
+        switch_pm_text=no_results_text,
+        switch_pm_parameter=no_results_parameter
     )
 
 def error_handler(bot, update, error):
@@ -286,13 +286,13 @@ def main():
 
         config.read('config.cfg')
 
-        botToken = config['Telegram']['Key' if args.server else 'TestKey']
+        bot_token = config['Telegram']['Key' if args.server else 'TestKey']
     except:
         logger.error('Missing bot token')
 
         return
 
-    if not botToken:
+    if not bot_token:
         logger.error('Missing bot token')
 
         return
@@ -319,7 +319,7 @@ def main():
     except:
         logger.info('Missing Google Analytics token')
 
-    updater = Updater(botToken)
+    updater = Updater(bot_token)
 
     dispatcher = updater.dispatcher
 
@@ -342,7 +342,7 @@ def main():
                 port = int(webhook['Port'])
                 key = webhook['Key']
                 cert = webhook['Cert']
-                url = webhook['Url'] + botToken
+                url = webhook['Url'] + bot_token
 
                 if args.set_webhook:
                     logger.info('Updated webhook')
@@ -352,7 +352,7 @@ def main():
                 updater.start_webhook(
                     listen='0.0.0.0',
                     port=port,
-                    url_path=botToken,
+                    url_path=bot_token,
                     key=key,
                     cert=cert,
                     webhook_url=url
