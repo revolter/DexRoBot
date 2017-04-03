@@ -249,7 +249,7 @@ def inline_query_handler(bot, update):
         dexDefinitionHTMLRep = '{}\n{}'.format(dexDefinitionHTMLRep, dexDefinitionFooter)
 
         if args.debug:
-            logger.info('Result: {}: {}'.format(index, dexDefinitionHTMLRep))
+            logger.info('Result: {}: {}'.format(dexDefinitionIndex, dexDefinitionHTMLRep))
 
         dexDefinitionResult = InlineQueryResultArticle(
             id=uuid4(),
