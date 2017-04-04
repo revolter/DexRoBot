@@ -15,7 +15,7 @@ from botanio import botan
 
 from lxml import etree, html
 
-from telegram import InlineQueryResultArticle, InputTextMessageContent, ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent, ParseMode
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 from telegram.constants import MAX_MESSAGE_LENGTH
 
@@ -67,6 +67,20 @@ def start_handler(bot, update):
     query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
 
     if not query:
+        reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
+        reply_markup = InlineKeyboardMarkup([[reply_button]])
+
+        bot.sendMessage(
+            chat_id,
+            (
+                'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
+                '[dexonline.ro](http://dexonline.ro). '
+                'Încearcă să scrii _@DexRoBot cuvânt_ în orice chat.'
+            ),
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+
         return
 
     url = DEX_SEARCH_URL_FORMAT.format(query)
