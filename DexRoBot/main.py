@@ -6,7 +6,10 @@ from uuid import uuid4
 import argparse
 import configparser
 import logging
+import os
 import re
+import sys
+import time
 
 from botanio import botan
 
@@ -44,6 +47,8 @@ COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'/\w+\s*')
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
 
+ADMIN_USER_ID = 56742306
+
 logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
@@ -74,6 +79,20 @@ def start_handler(bot, update):
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
     )
+
+def restart_handler(bot, update):
+    chat_id = update.message.chat_id
+
+    if update.message.from_user.id != ADMIN_USER_ID:
+        bot.sendMessage(chat_id, 'You are not allowed to restart the bot')
+
+        return
+
+    bot.sendMessage(chat_id, 'Restarting...')
+
+    time.sleep(0.2)
+
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 def inline_query_handler(bot, update):
     inline_query = update.inline_query
@@ -324,8 +343,10 @@ def main():
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler('start', start_handler))
+    dispatcher.add_handler(CommandHandler('restart', restart_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
+
     dispatcher.add_error_handler(error_handler)
 
     if args.debug:
@@ -367,6 +388,8 @@ def main():
             updater.start_polling()
 
     logger.info('Bot started. Press Ctrl-C to stop.')
+
+    updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been (re)started')
 
     updater.idle()
 
