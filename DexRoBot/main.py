@@ -72,7 +72,7 @@ def start_handler(bot, update):
         chat_id=chat_id,
         text=reply,
         parse_mode=ParseMode.MARKDOWN,
-        disable_web_page_preview=False
+        disable_web_page_preview=True
     )
 
 def inline_query_handler(bot, update):
