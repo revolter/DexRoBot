@@ -21,6 +21,8 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
 
+BOT_TOKEN = None
+
 BOTAN_TOKEN = None
 GOOGLE_TOKEN = None
 
@@ -314,45 +316,7 @@ def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
 
 def main():
-    try:
-        config = configparser.ConfigParser()
-
-        config.read('config.cfg')
-
-        bot_token = config['Telegram']['Key' if args.server else 'TestKey']
-    except:
-        logger.error('Missing bot token')
-
-        return
-
-    if not bot_token:
-        logger.error('Missing bot token')
-
-        return
-
-    try:
-        config = configparser.ConfigParser()
-
-        config.read('config.cfg')
-
-        global BOTAN_TOKEN
-
-        BOTAN_TOKEN = config['Botan']['Key']
-    except:
-        logger.info('Missing Botan token')
-
-    try:
-        config = configparser.ConfigParser()
-
-        config.read('config.cfg')
-
-        global GOOGLE_TOKEN
-
-        GOOGLE_TOKEN = config['Google']['Key']
-    except:
-        logger.info('Missing Google Analytics token')
-
-    updater = Updater(bot_token)
+    updater = Updater(BOT_TOKEN)
 
     dispatcher = updater.dispatcher
 
@@ -377,7 +341,7 @@ def main():
                 port = int(webhook['Port'])
                 key = webhook['Key']
                 cert = webhook['Cert']
-                url = webhook['Url'] + bot_token
+                url = webhook['Url'] + BOT_TOKEN
 
                 if args.set_webhook:
                     logger.info('Updated webhook')
@@ -387,7 +351,7 @@ def main():
                 updater.start_webhook(
                     listen='0.0.0.0',
                     port=port,
-                    url_path=bot_token,
+                    url_path=BOT_TOKEN,
                     key=key,
                     cert=cert,
                     webhook_url=url
@@ -424,6 +388,28 @@ if __name__ == '__main__':
 
     if args.debug:
         logger.info('Debug')
+
+    try:
+        config = configparser.ConfigParser()
+
+        config.read('config.cfg')
+
+        BOT_TOKEN = config.get('Telegram', 'Key' if args.server else 'TestKey')
+    except configparser.Error as error:
+        logger.error('Config error: {}'.format(error))
+
+        exit(1)
+
+    if not BOT_TOKEN:
+        logger.error('Missing bot token')
+
+        exit(2)
+
+    try:
+        BOTAN_TOKEN = config.get('Botan', 'Key')
+        GOOGLE_TOKEN = config.get('Google', 'Key')
+    except configparser.Error as error:
+        logger.warning('Config error: {}'.format(error))
 
     if args.query or args.fragment:
         class Dummy:
