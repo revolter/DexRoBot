@@ -220,7 +220,7 @@ def inline_query_handler(bot, update):
             dex_definition_title[:-3] # ellipsis
             dex_definition_title = '{}...'.format(dex_definition_title)
 
-        dex_definition_url = '{}/{}'.format(dex_url, dex_definition_id)
+        dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, dex_definition_author)
 
         dex_definition_footer = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name, dex_author_url, dex_definition_author)
