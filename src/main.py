@@ -23,6 +23,8 @@ import requests
 
 BOT_TOKEN = None
 
+ADMIN_USER_ID = None
+
 BOTAN_TOKEN = None
 GOOGLE_TOKEN = None
 
@@ -48,8 +50,6 @@ COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'/\w+\s*')
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
-
-ADMIN_USER_ID = 56742306
 
 logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
 
@@ -99,7 +99,7 @@ def start_handler(bot, update):
 def restart_handler(bot, update):
     chat_id = update.message.chat_id
 
-    if update.message.from_user.id != ADMIN_USER_ID:
+    if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
         bot.sendMessage(chat_id, 'You are not allowed to restart the bot')
 
         return
@@ -367,7 +367,8 @@ def main():
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
-    updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been (re)started')
+    if ADMIN_USER_ID:
+        updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been (re)started')
 
     updater.idle()
 
@@ -406,6 +407,8 @@ if __name__ == '__main__':
         exit(2)
 
     try:
+        ADMIN_USER_ID = config.getint('Telegram', 'Admin')
+
         BOTAN_TOKEN = config.get('Botan', 'Key')
         GOOGLE_TOKEN = config.get('Google', 'Key')
     except configparser.Error as error:
