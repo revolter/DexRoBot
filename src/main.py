@@ -82,9 +82,9 @@ def restart_handler(bot, update):
 
         return
 
-    bot.sendMessage(chat_id, 'Restarting...')
+    bot.sendMessage(chat_id, 'Restarting after 1 second...')
 
-    time.sleep(0.2)
+    time.sleep(1)
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
@@ -346,7 +346,7 @@ def main():
     logger.info('Bot started. Press Ctrl-C to stop.')
 
     if ADMIN_USER_ID:
-        updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been (re)started')
+        updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been restarted')
 
     updater.idle()
 
