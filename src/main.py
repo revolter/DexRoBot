@@ -197,6 +197,12 @@ def inline_query_handler(bot, update):
         dex_definition_title = ''
 
         for child in elements:
+            for sup in child.findall('sup'):
+                supNumber = int(sup.text_content())
+
+                if 0 <= supNumber <= 9:
+                    sup.text = UNICODE_SUPERSCRIPTS[supNumber]
+
             etree.strip_tags(child, '*')
 
             if not child.tag in ['b', 'i']:

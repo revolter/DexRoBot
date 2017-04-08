@@ -23,5 +23,7 @@ UNFINISHED_TAG_REGEX = re.compile(r'</?(?:\w+)?$')
 
 COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'/\w+\s*')
 
+UNICODE_SUPERSCRIPTS = '⁰¹²³⁴⁵⁶⁷⁸⁹'
+
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
