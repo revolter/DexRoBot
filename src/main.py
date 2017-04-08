@@ -4,6 +4,7 @@
 from uuid import uuid4
 
 import argparse
+import base64
 import configparser
 import logging
 import os
@@ -45,6 +46,7 @@ def start_handler(bot, update):
     chat_id = message.chat_id
 
     query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
+    query = base64.urlsafe_b64decode(query)
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
@@ -268,7 +270,7 @@ def inline_query_handler(bot, update):
 
     if results_count == 0:
         no_results_text = 'Niciun rezultat'
-        no_results_parameter = query
+        no_results_parameter = base64.urlsafe_b64encode(query.encode()).decode()
     else:
         results = results[:MESSAGES_COUNT_LIMIT + 1]
 
