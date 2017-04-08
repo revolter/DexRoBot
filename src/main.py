@@ -55,7 +55,7 @@ def start_handler(bot, update):
             (
                 'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
                 '[dexonline.ro](http://dexonline.ro). '
-                'Încearcă să scrii _@DexRoBot cuvânt_ în orice chat.'
+                'Încearcă să scrii @DexRoBot _cuvânt_ în orice chat.'
             ),
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
