@@ -260,6 +260,8 @@ def inline_query_handler(bot, update):
             id=uuid4(),
             title=dex_definition_title,
             thumb_url=DEX_THUMBNAIL_URL,
+            url=dex_definition_url,
+            hide_url=True,
             input_message_content=InputTextMessageContent(
                 message_text=dex_definition_html,
                 parse_mode=ParseMode.HTML,
