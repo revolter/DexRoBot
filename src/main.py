@@ -83,9 +83,7 @@ def start_handler(bot, update):
 def restart_handler(bot, update):
     chat_id = update.message.chat_id
 
-    if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
-        bot.sendMessage(chat_id, 'You are not allowed to restart the bot')
-
+    if not check_admin(bot, update):
         return
 
     bot.sendMessage(chat_id, 'Restarting...' if args.debug else 'Restarting in 1 second...')
@@ -93,6 +91,14 @@ def restart_handler(bot, update):
     time.sleep(0.2 if args.debug else 1)
 
     os.execl(sys.executable, sys.executable, *sys.argv)
+
+def check_admin(bot, update):
+    if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
+        bot.sendMessage(update.message.chat_id, 'You are not allowed to restart the bot')
+
+        return False
+
+    return True
 
 def inline_query_handler(bot, update):
     inline_query = update.inline_query
