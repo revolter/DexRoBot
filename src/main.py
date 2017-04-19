@@ -92,6 +92,14 @@ def restart_handler(bot, update):
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
+def logs_handler(bot, update):
+    chat_id = update.message.chat_id
+
+    if not check_admin(bot, update):
+        return
+
+    bot.sendDocument(chat_id, document=open('errors.log', 'rb'))
+
 def check_admin(bot, update):
     if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
         bot.sendMessage(update.message.chat_id, 'You are not allowed to restart the bot')
@@ -320,6 +328,7 @@ def main():
 
     dispatcher.add_handler(CommandHandler('start', start_handler))
     dispatcher.add_handler(CommandHandler('restart', restart_handler))
+    dispatcher.add_handler(CommandHandler('logs', logs_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
 
