@@ -46,7 +46,11 @@ def start_handler(bot, update):
     chat_id = message.chat_id
 
     query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
-    query = base64.urlsafe_b64decode(query)
+
+    try:
+        query = base64.urlsafe_b64decode(query).decode('utf-8')
+    except:
+        pass
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
