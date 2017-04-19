@@ -88,9 +88,9 @@ def restart_handler(bot, update):
 
         return
 
-    bot.sendMessage(chat_id, 'Restarting after 1 second...')
+    bot.sendMessage(chat_id, 'Restarting...' if args.debug else 'Restarting in 1 second...')
 
-    time.sleep(1)
+    time.sleep(0.2 if args.debug else 1)
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
