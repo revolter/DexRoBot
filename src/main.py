@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from urllib.parse import quote
 from uuid import uuid4
 
 import argparse
@@ -67,7 +68,7 @@ def start_handler(bot, update, args):
 
         return
 
-    url = DEX_SEARCH_URL_FORMAT.format(query)
+    url = DEX_SEARCH_URL_FORMAT.format(quote(query))
 
     reply = 'Niciun rezultat găsit pentru "{}". Incearcă o căutare in tot textul definițiilor [aici]({}).'.format(query, url)
 
