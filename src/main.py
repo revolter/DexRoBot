@@ -40,12 +40,10 @@ errorHandler.setLevel(logging.ERROR)
 
 logger.addHandler(errorHandler)
 
-def start_handler(bot, update):
-    message = update.message
-    command = message.text
-    chat_id = message.chat_id
+def start_handler(bot, update, args):
+    chat_id = update.message.chat_id
 
-    query = COMMAND_QUERY_EXTRACT_REGEX.sub('', command)
+    query = ' '.join(args)
 
     try:
         query = base64.urlsafe_b64decode(query).decode('utf-8')
@@ -326,7 +324,7 @@ def main():
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler('start', start_handler))
+    dispatcher.add_handler(CommandHandler('start', start_handler, pass_args=True))
     dispatcher.add_handler(CommandHandler('restart', restart_handler))
     dispatcher.add_handler(CommandHandler('logs', logs_handler))
 

@@ -21,8 +21,6 @@ DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
 DANGLING_TAG_REGEX = re.compile(r'<([^/>]+)>[^<]*$')
 UNFINISHED_TAG_REGEX = re.compile(r'</?(?:\w+)?$')
 
-COMMAND_QUERY_EXTRACT_REGEX = re.compile(r'/\w+\s*')
-
 UNICODE_SUPERSCRIPTS = '⁰¹²³⁴⁵⁶⁷⁸⁹'
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
