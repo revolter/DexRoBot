@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from datetime import timedelta
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -21,6 +22,7 @@ from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
+import requests_cache
 
 from constants import *
 
@@ -195,10 +197,11 @@ def inline_query_handler(bot, update):
         if GOOGLE_TOKEN:
             google_analytics_url = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
 
-            google_analytics_response = requests.get(google_analytics_url, headers=GOOGLE_HEADERS)
+            with requests_cache.disabled():
+                google_analytics_response = requests.get(google_analytics_url, headers=GOOGLE_HEADERS)
 
-            if not str(google_analytics_response.status_code).startswith('2'):
-                logger.error('Google analytics error: {}: {}').format(google_analytics_response.status_code, google_analytics_response.text)
+                if not str(google_analytics_response.status_code).startswith('2'):
+                    logger.error('Google analytics error: {}: {}').format(google_analytics_response.status_code, google_analytics_response.text)
 
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
@@ -419,6 +422,8 @@ if __name__ == '__main__':
         GOOGLE_TOKEN = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
+
+    requests_cache.install_cache(expire_after=timedelta(days=1))
 
     if args.query or args.fragment:
         class Dummy:

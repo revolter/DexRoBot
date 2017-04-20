@@ -158,3 +158,6 @@ config.cfg
 
 # PyCharm
 .idea
+
+# cache
+src/cache.sqlite
