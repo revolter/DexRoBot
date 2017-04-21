@@ -296,7 +296,7 @@ def inline_query_handler(bot, update):
         no_results_text = 'Niciun rezultat'
         no_results_parameter = base64.urlsafe_b64encode(query.encode()).decode()
     else:
-        results = results[:MESSAGES_COUNT_LIMIT + 1]
+        results = results[:MESSAGES_COUNT_LIMIT]
 
     cache_time = 24 * 60 * 60
 
