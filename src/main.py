@@ -99,7 +99,10 @@ def logs_handler(bot, update):
     if not check_admin(bot, update):
         return
 
-    bot.sendDocument(chat_id, document=open('errors.log', 'rb'))
+    try:
+        bot.sendDocument(chat_id, document=open('errors.log', 'rb'))
+    except:
+        bot.sendMessage(chat_id, 'Log is empty')
 
 def check_admin(bot, update):
     if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
