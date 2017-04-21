@@ -205,7 +205,7 @@ def inline_query_handler(bot, update):
                 google_analytics_response = requests.get(google_analytics_url, headers=GOOGLE_HEADERS)
 
                 if not str(google_analytics_response.status_code).startswith('2'):
-                    logger.error('Google analytics error: {}: {}').format(google_analytics_response.status_code, google_analytics_response.text)
+                    logger.error('Google analytics error: {}: {}'.format(google_analytics_response.status_code, google_analytics_response.text))
 
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
