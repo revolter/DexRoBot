@@ -3,12 +3,16 @@
 
 from enum import Enum
 
+import logging
+
 from botanio import botan
 
 import requests
 import requests_cache
 
 from constants import GOOGLE_HEADERS, GOOGLE_ANALYTICS_BASE_URL
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyticsType(Enum):
@@ -22,8 +26,6 @@ class Analytics:
         self.botanToken = None
         self.googleToken = None
 
-        self.logger = None
-
     def __botan_track(self, analytics_type, user, data):
         if not self.botanToken:
             return
@@ -35,9 +37,9 @@ class Analytics:
         botan_track = botan.track(self.botanToken, user, params, analytics_type.value)
 
         if not botan_track:
-            self.logger.error('Botan analytics error')
+            logger.error('Botan analytics error')
         elif botan_track['status'] != 'accepted':
-            self.logger.error('Botan analytics error: {}'.format(botan_track))
+            logger.error('Botan analytics error: {}'.format(botan_track))
 
     def __google_track(self, analytics_type, user, data):
         if not self.googleToken:
@@ -49,7 +51,7 @@ class Analytics:
             response = requests.get(url, headers=GOOGLE_HEADERS)
 
             if response.status_code != 200:
-                self.logger.error('Google analytics error: {}'.format(response.status_code))
+                logger.error('Google analytics error: {}'.format(response.status_code))
 
     def track(self, analytics_type, user, data):
         self.__botan_track(analytics_type, user, data)

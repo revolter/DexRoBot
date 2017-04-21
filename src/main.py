@@ -35,13 +35,13 @@ ADMIN_USER_ID = None
 
 logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
 
-logger = logging.getLogger(__name__)
-
 error_logging_handler = logging.FileHandler('errors.log')
 error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
 error_logging_handler.setLevel(logging.ERROR)
 
-logger.addHandler(error_logging_handler)
+logging.getLogger('').addHandler(error_logging_handler)
+
+logger = logging.getLogger(__name__)
 
 analytics = None
 
@@ -423,8 +423,6 @@ if __name__ == '__main__':
         exit(2)
 
     analytics = Analytics()
-
-    analytics.logger = logger
 
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
