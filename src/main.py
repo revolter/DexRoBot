@@ -195,7 +195,8 @@ def inline_query_handler(bot, update):
         if BOTAN_TOKEN:
             botan_track = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
 
-            logger.info('Botan track: {}'.format(botan_track))
+            if not botan_track:
+                logger.error('Botan analytics error')
 
         if GOOGLE_TOKEN:
             google_analytics_url = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
