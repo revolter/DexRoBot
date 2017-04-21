@@ -112,6 +112,7 @@ def check_admin(bot, update):
 
 def inline_query_handler(bot, update):
     inline_query = update.inline_query
+    user = inline_query.from_user
 
     if args.fragment:
         query = None
@@ -124,9 +125,9 @@ def inline_query_handler(bot, update):
         if not query:
             logger.warning('Empty query')
 
-            return
+            analytics.track(AnalyticsType.EMPTY_QUERY, user, None)
 
-    user = inline_query.from_user
+            return
 
     if not args.server:
         user_identification = '#{}'.format(user.id)

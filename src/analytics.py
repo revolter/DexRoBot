@@ -11,6 +11,7 @@ import requests_cache
 from constants import GOOGLE_HEADERS, GOOGLE_ANALYTICS_BASE_URL
 
 class AnalyticsType(Enum):
+    EMPTY_QUERY = 'empty_query'
     INLINE_QUERY = 'inline_query'
 
 class Analytics:
