@@ -42,7 +42,10 @@ logger.addHandler(errorHandler)
 analytics = None
 
 def start_handler(bot, update, args):
-    chat_id = update.message.chat_id
+    message = update.message
+    chat_id = message.chat_id
+
+    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
     query = ' '.join(args)
 
@@ -104,6 +107,8 @@ def logs_handler(bot, update):
         bot.sendMessage(chat_id, 'Log is empty')
 
 def check_admin(bot, message):
+    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
+
     if not ADMIN_USER_ID or message.from_user.id != ADMIN_USER_ID:
         bot.sendMessage(message.chat_id, 'You are not allowed to restart the bot')
 
