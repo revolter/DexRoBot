@@ -1,4 +1,4 @@
-# <img src="/images/logo.png" width="28"/> Dex Bot 
+# <img src="/images/logo.png" width="28"/> Dex Bot
 
 ## Introduction
 
@@ -26,3 +26,27 @@ TestKey: <Telegram Bot API token key>
 ```
 
 And run it using `./main.py -d`.
+
+## Deploy
+
+You can easily deploy this to a cloud machine using [Fabric](http://fabfile.org):
+
+```
+cd /project/location/path
+virtualenv -p python3 env-dev
+source env-dev/bin/activate
+pip install -r requirements-dev.txt
+```
+
+Then create a file named `fabfile.cfg` inside the root folder and run Fabric using:
+
+```
+fab setup
+fab deploy
+```
+
+You can also deploy a single file using:
+
+```
+fab deploy:filename=main.py
+```
