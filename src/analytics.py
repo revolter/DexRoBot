@@ -19,7 +19,11 @@ class Analytics:
         if not self.botanToken:
             return
 
-        botan_track = botan.track(self.botanToken, user, {'query': data}, type.value)
+        params = {
+            'query': data
+        }
+
+        botan_track = botan.track(self.botanToken, user, params, type.value)
 
         if not botan_track:
             self.logger.error('Botan analytics error')

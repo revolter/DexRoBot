@@ -5,7 +5,7 @@ import re
 
 GOOGLE_HEADERS = {'User-Agent': 'DexRoBot'}
 
-GOOGLE_ANALYTICS_BASE_URL = "https://www.google-analytics.com/collect?v=1&tid={}&cid={}&t=event&ec={}&ea={}"
+GOOGLE_ANALYTICS_BASE_URL = "https://www.google-analytics.com/collect?v=1&t=event&tid={}&cid={}&ec={}&ea={}"
 
 LOGS_FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
