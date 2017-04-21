@@ -85,9 +85,9 @@ def restart_handler(bot, update):
     if not check_admin(bot, message):
         return
 
-    bot.sendMessage(message.chat_id, 'Restarting...' if args.debug else 'Restarting in 1 second...')
+    bot.sendMessage(message.chat_id, 'Restarting...' if cli_args.debug else 'Restarting in 1 second...')
 
-    time.sleep(0.2 if args.debug else 1)
+    time.sleep(0.2 if cli_args.debug else 1)
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
@@ -115,11 +115,11 @@ def inline_query_handler(bot, update):
     inline_query = update.inline_query
     user = inline_query.from_user
 
-    if args.fragment:
+    if cli_args.fragment:
         query = None
     else:
-        if args.query:
-            query = args.query
+        if cli_args.query:
+            query = cli_args.query
         else:
             query = inline_query.query
 
@@ -130,7 +130,7 @@ def inline_query_handler(bot, update):
 
             return
 
-    if not args.server:
+    if not cli_args.server:
         user_identification = '#{}'.format(user.id)
         user_name = None
 
@@ -151,12 +151,12 @@ def inline_query_handler(bot, update):
 
         logger.info('{} {}'.format(user_identification, query))
 
-    if args.fragment:
+    if cli_args.fragment:
         dex_url = 'debug'
 
         dex_raw_definitions = [{
             'id': 0,
-            'htmlRep': args.fragment,
+            'htmlRep': cli_args.fragment,
             'sourceName': None,
             'userNick': None
         }]
@@ -173,13 +173,13 @@ def inline_query_handler(bot, update):
     for index in range(len(dex_raw_definitions)):
         dex_raw_definitions[index]['index'] = index
 
-    if args.index is not None:
-        if args.index >= len(dex_raw_definitions):
+    if cli_args.index is not None:
+        if cli_args.index >= len(dex_raw_definitions):
             logger.warning('Index out of bounds')
 
             return
 
-        dex_raw_definitions = [dex_raw_definitions[args.index]]
+        dex_raw_definitions = [dex_raw_definitions[cli_args.index]]
 
     results = list()
 
@@ -230,7 +230,7 @@ def inline_query_handler(bot, update):
             if child.tail:
                 dex_definition_title = '{}{}'.format(dex_definition_title, child.tail)
 
-        if args.debug:
+        if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
 
         dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
@@ -264,7 +264,7 @@ def inline_query_handler(bot, update):
 
         dex_definition_html = '{}\n{}'.format(dex_definition_html, dex_definition_footer)
 
-        if args.debug:
+        if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
 
         dex_definition_result = InlineQueryResultArticle(
@@ -295,7 +295,7 @@ def inline_query_handler(bot, update):
 
     cache_time = 24 * 60 * 60
 
-    if args.debug:
+    if cli_args.debug:
         cache_time = 0
 
     next_offset = None
@@ -327,12 +327,12 @@ def main():
 
     dispatcher.add_error_handler(error_handler)
 
-    if args.debug:
+    if cli_args.debug:
         logger.info('Started polling')
 
         updater.start_polling(timeout=0.01)
     else:
-        if args.server and not args.polling:
+        if cli_args.server and not cli_args.polling:
             logger.info('Started webhook')
 
             if config:
@@ -343,7 +343,7 @@ def main():
                 cert = webhook['Cert']
                 url = webhook['Url'] + BOT_TOKEN
 
-                if args.set_webhook:
+                if cli_args.set_webhook:
                     logger.info('Updated webhook')
                 else:
                     updater.bot.setWebhook = (lambda *args, **kwargs: None)
@@ -385,9 +385,9 @@ if __name__ == '__main__':
     parser.add_argument('-sw', '--set-webhook', action='store_true')
     parser.add_argument('-s', '--server', action='store_true')
 
-    args = parser.parse_args()
+    cli_args = parser.parse_args()
 
-    if args.debug:
+    if cli_args.debug:
         logger.info('Debug')
 
     try:
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
         config.read('config.cfg')
 
-        BOT_TOKEN = config.get('Telegram', 'Key' if args.server else 'TestKey')
+        BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
     except configparser.Error as error:
         logger.error('Config error: {}'.format(error))
 
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 
     requests_cache.install_cache(expire_after=timedelta(days=1))
 
-    if args.query or args.fragment:
+    if cli_args.query or cli_args.fragment:
         class Dummy:
             pass
 
