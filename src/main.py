@@ -241,7 +241,7 @@ def inline_query_handler(bot, update):
         dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
 
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dex_definition_title[:-3] # ellipsis
+            dex_definition_title = dex_definition_title[:-3] # ellipsis
             dex_definition_title = '{}...'.format(dex_definition_title)
 
         dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
