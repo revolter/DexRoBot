@@ -153,6 +153,9 @@ pip-selfcheck.json
 # End of https://www.gitignore.io/api/python,virtualenv,macos,vim
 
 ### Custom ###
+# env
+env-dev/
+
 # config
 config.cfg
 fabfile.cfg
