@@ -13,8 +13,6 @@ import os
 import sys
 import time
 
-from botanio import botan
-
 from lxml import etree, html
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent, ParseMode
@@ -24,14 +22,12 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 import requests
 import requests_cache
 
+from analytics import Analytics, AnalyticsType
 from constants import *
 
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
-
-BOTAN_TOKEN = None
-GOOGLE_TOKEN = None
 
 logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
 
@@ -42,6 +38,8 @@ errorHandler.setFormatter(logging.Formatter(LOGS_FORMAT))
 errorHandler.setLevel(logging.ERROR)
 
 logger.addHandler(errorHandler)
+
+analytics = None
 
 def start_handler(bot, update, args):
     chat_id = update.message.chat_id
@@ -192,20 +190,7 @@ def inline_query_handler(bot, update):
         if offset < len(dex_raw_definitions):
             dex_raw_definitions = dex_raw_definitions[offset + 1:]
     else:
-        if BOTAN_TOKEN:
-            botan_track = botan.track(BOTAN_TOKEN, user, {'query': query}, 'inline_query')
-
-            if not botan_track:
-                logger.error('Botan analytics error')
-
-        if GOOGLE_TOKEN:
-            google_analytics_url = GOOGLE_ANALYTICS_BASE_URL.format(GOOGLE_TOKEN, user.id, 'inline_query', query)
-
-            with requests_cache.disabled():
-                google_analytics_response = requests.get(google_analytics_url, headers=GOOGLE_HEADERS)
-
-                if not str(google_analytics_response.status_code).startswith('2'):
-                    logger.error('Google analytics error: {}'.format(google_analytics_response.status_code))
+        analytics.track(AnalyticsType.INLINE_QUERY, user, query)
 
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
@@ -419,11 +404,15 @@ if __name__ == '__main__':
 
         exit(2)
 
+    analytics = Analytics()
+
+    analytics.logger = logger
+
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
 
-        BOTAN_TOKEN = config.get('Botan', 'Key')
-        GOOGLE_TOKEN = config.get('Google', 'Key')
+        analytics.botanToken = config.get('Botan', 'Key')
+        analytics.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
 

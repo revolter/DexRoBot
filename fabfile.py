@@ -18,7 +18,15 @@ except configparser.Error as error:
     exit(1)
 
 env.project_name = 'DexRoBot'
-env.source_filenames = ['main.py', 'constants.py', 'config.cfg', 'requirements.txt']
+env.source_filenames = [
+    'main.py',
+    'analytics.py',
+    'constants.py',
+
+    'config.cfg',
+
+    'requirements.txt'
+]
 
 env.colorize_errors=True
 env.warn_only=True
