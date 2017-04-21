@@ -31,6 +31,7 @@ env.source_filenames = [
 env.colorize_errors=True
 env.warn_only=True
 
+
 def setup():
     run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
     run('ln -s {0.project_path}/{0.project_name} ~/{0.project_name}'.format(env))
@@ -38,9 +39,11 @@ def setup():
     with cd('~/{.project_name}'.format(env)):
         run('virtualenv -p python3 env')
 
+
 def cleanup():
     run('rm -r ~/{.project_name}'.format(env))
     run('rm -r {0.project_path}/{0.project_name}'.format(env))
+
 
 def deploy(filename=None):
     with cd('~/{.project_name}'.format(env)):

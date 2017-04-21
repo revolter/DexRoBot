@@ -15,7 +15,10 @@ import time
 
 from lxml import etree, html
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent, ParseMode
+from telegram import (
+    InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle,
+    InputTextMessageContent, ParseMode
+)
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 from telegram.constants import MAX_MESSAGE_LENGTH
 
@@ -33,13 +36,14 @@ logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-errorHandler = logging.FileHandler('errors.log')
-errorHandler.setFormatter(logging.Formatter(LOGS_FORMAT))
-errorHandler.setLevel(logging.ERROR)
+error_logging_handler = logging.FileHandler('errors.log')
+error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
+error_logging_handler.setLevel(logging.ERROR)
 
-logger.addHandler(errorHandler)
+logger.addHandler(error_logging_handler)
 
 analytics = None
+
 
 def start_command_handler(bot, update, args):
     message = update.message
@@ -59,8 +63,7 @@ def start_command_handler(bot, update, args):
         reply_markup = InlineKeyboardMarkup([[reply_button]])
 
         bot.sendMessage(
-            chat_id,
-            (
+            chat_id, (
                 'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
                 '[dexonline.ro](http://dexonline.ro). '
                 'Încearcă să scrii @DexRoBot _cuvânt_ în orice chat.'
@@ -73,7 +76,10 @@ def start_command_handler(bot, update, args):
 
     url = DEX_SEARCH_URL_FORMAT.format(quote(query))
 
-    reply = 'Niciun rezultat găsit pentru "{}". Incearcă o căutare in tot textul definițiilor [aici]({}).'.format(query, url)
+    reply = (
+        'Niciun rezultat găsit pentru "{}". '
+        'Incearcă o căutare in tot textul definițiilor [aici]({}).'
+    ).format(query, url)
 
     bot.sendMessage(
         chat_id=chat_id,
@@ -81,6 +87,7 @@ def start_command_handler(bot, update, args):
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
     )
+
 
 def restart_command_handler(bot, update):
     message = update.message
@@ -94,6 +101,7 @@ def restart_command_handler(bot, update):
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
+
 def logs_command_handler(bot, update):
     message = update.message
     chat_id = message.chat_id
@@ -106,6 +114,7 @@ def logs_command_handler(bot, update):
     except:
         bot.sendMessage(chat_id, 'Log is empty')
 
+
 def check_admin(bot, message):
     analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
@@ -115,6 +124,7 @@ def check_admin(bot, message):
         return False
 
     return True
+
 
 def inline_query_handler(bot, update):
     inline_query = update.inline_query
@@ -172,7 +182,7 @@ def inline_query_handler(bot, update):
 
         dex_raw_definitions = dex_raw_response['definitions']
 
-        dex_url = dex_api_url[:-5] # /json
+        dex_url = dex_api_url[:-5]  # /json
 
     # set the index of the definitions
     for index in range(len(dex_raw_definitions)):
@@ -214,17 +224,17 @@ def inline_query_handler(bot, update):
 
         for child in elements:
             for sup in child.findall('sup'):
-                supNumber = int(sup.text_content())
+                sup_number = int(sup.text_content())
 
-                if 0 <= supNumber <= 9:
-                    sup.text = UNICODE_SUPERSCRIPTS[supNumber]
+                if 0 <= sup_number <= 9:
+                    sup.text = UNICODE_SUPERSCRIPTS[sup_number]
 
             etree.strip_tags(child, '*')
 
-            if not child.tag in ['b', 'i']:
+            if child.tag not in ['b', 'i']:
                 child.tag = 'i'
 
-            child.attrib.clear() # etree.strip_attributes(child, '*') should work too
+            child.attrib.clear()  # etree.strip_attributes(child, '*') should work too
 
             child_string = html.tostring(child).decode()
 
@@ -241,20 +251,26 @@ def inline_query_handler(bot, update):
         dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
 
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dex_definition_title = dex_definition_title[:-3] # ellipsis
+            dex_definition_title = dex_definition_title[:-3]  # ellipsis
             dex_definition_title = '{}...'.format(dex_definition_title)
 
         dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, dex_definition_author)
 
-        dex_definition_footer = '{}\nsursa: <a href="{}">{}</a> adăugată de: <a href="{}">{}</a>'.format(dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name, dex_author_url, dex_definition_author)
+        dex_definition_footer = (
+            '{}\nsursa: <a href="{}">{}</a> '
+            'adăugată de: <a href="{}">{}</a>'
+        ).format(
+            dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
+            dex_author_url, dex_definition_author
+        )
 
         text_limit = MAX_MESSAGE_LENGTH
 
-        text_limit -= 1 # newline between text and url
-        text_limit -= len(dex_definition_footer) # definition footer
-        text_limit -= 4 # possible end tag
-        text_limit -= 3 # ellipsis
+        text_limit -= 1  # newline between text and url
+        text_limit -= len(dex_definition_footer)  # definition footer
+        text_limit -= 4  # possible end tag
+        text_limit -= 3  # ellipsis
 
         dex_definition_html = dex_definition_html[:text_limit]
 
@@ -316,8 +332,10 @@ def inline_query_handler(bot, update):
         switch_pm_parameter=no_results_parameter
     )
 
+
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
+
 
 def main():
     updater = Updater(BOT_TOKEN)
@@ -377,6 +395,7 @@ def main():
 
     updater.idle()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -394,6 +413,8 @@ if __name__ == '__main__':
 
     if cli_args.debug:
         logger.info('Debug')
+
+    config = None
 
     try:
         config = configparser.ConfigParser()
@@ -427,21 +448,22 @@ if __name__ == '__main__':
 
     if cli_args.query or cli_args.fragment:
         class Dummy:
-            pass
+            def __init__(self):
+                self.inline_query = None
 
-        update = Dummy()
+        dummy_update = Dummy()
 
-        update.inline_query = Dummy()
+        dummy_update.inline_query = Dummy()
 
-        update.inline_query.from_user = Dummy()
-        update.inline_query.offset = None
-        update.inline_query.answer = (lambda *args, **kwargs: None)
+        dummy_update.inline_query.from_user = Dummy()
+        dummy_update.inline_query.offset = None
+        dummy_update.inline_query.answer = (lambda *args, **kwargs: None)
 
-        update.inline_query.from_user.id = None
-        update.inline_query.from_user.first_name = None
-        update.inline_query.from_user.last_name = None
-        update.inline_query.from_user.username = None
+        dummy_update.inline_query.from_user.id = None
+        dummy_update.inline_query.from_user.first_name = None
+        dummy_update.inline_query.from_user.last_name = None
+        dummy_update.inline_query.from_user.username = None
 
-        inline_query_handler(None, update)
+        inline_query_handler(None, dummy_update)
     else:
         main()
