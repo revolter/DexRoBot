@@ -304,7 +304,7 @@ def inline_query_handler(bot, update):
     else:
         results = results[:MESSAGES_COUNT_LIMIT]
 
-    cache_time = 24 * 60 * 60
+    cache_time = int(timedelta(hours=1).total_seconds())
 
     if cli_args.debug:
         cache_time = 0
