@@ -80,21 +80,22 @@ def start_handler(bot, update, args):
     )
 
 def restart_handler(bot, update):
-    chat_id = update.message.chat_id
+    message = update.message
 
-    if not check_admin(bot, update):
+    if not check_admin(bot, message):
         return
 
-    bot.sendMessage(chat_id, 'Restarting...' if args.debug else 'Restarting in 1 second...')
+    bot.sendMessage(message.chat_id, 'Restarting...' if args.debug else 'Restarting in 1 second...')
 
     time.sleep(0.2 if args.debug else 1)
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 def logs_handler(bot, update):
-    chat_id = update.message.chat_id
+    message = update.message
+    chat_id = message.chat_id
 
-    if not check_admin(bot, update):
+    if not check_admin(bot, message):
         return
 
     try:
@@ -102,9 +103,9 @@ def logs_handler(bot, update):
     except:
         bot.sendMessage(chat_id, 'Log is empty')
 
-def check_admin(bot, update):
-    if not ADMIN_USER_ID or update.message.from_user.id != ADMIN_USER_ID:
-        bot.sendMessage(update.message.chat_id, 'You are not allowed to restart the bot')
+def check_admin(bot, message):
+    if not ADMIN_USER_ID or message.from_user.id != ADMIN_USER_ID:
+        bot.sendMessage(message.chat_id, 'You are not allowed to restart the bot')
 
         return False
 
