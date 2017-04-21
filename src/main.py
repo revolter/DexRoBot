@@ -238,7 +238,7 @@ def inline_query_handler(bot, update):
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
 
-        dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT + 1]
+        dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
 
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
             dex_definition_title = dex_definition_title[:-3] # ellipsis
