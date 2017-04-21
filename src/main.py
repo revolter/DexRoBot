@@ -41,7 +41,7 @@ logger.addHandler(errorHandler)
 
 analytics = None
 
-def start_handler(bot, update, args):
+def start_command_handler(bot, update, args):
     message = update.message
     chat_id = message.chat_id
 
@@ -82,7 +82,7 @@ def start_handler(bot, update, args):
         disable_web_page_preview=True
     )
 
-def restart_handler(bot, update):
+def restart_command_handler(bot, update):
     message = update.message
 
     if not check_admin(bot, message):
@@ -94,7 +94,7 @@ def restart_handler(bot, update):
 
     os.execl(sys.executable, sys.executable, *sys.argv)
 
-def logs_handler(bot, update):
+def logs_command_handler(bot, update):
     message = update.message
     chat_id = message.chat_id
 
@@ -324,9 +324,9 @@ def main():
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler('start', start_handler, pass_args=True))
-    dispatcher.add_handler(CommandHandler('restart', restart_handler))
-    dispatcher.add_handler(CommandHandler('logs', logs_handler))
+    dispatcher.add_handler(CommandHandler('start', start_command_handler, pass_args=True))
+    dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
+    dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
 
