@@ -29,8 +29,8 @@ env.source_filenames = [
     'requirements.txt'
 ]
 
-env.colorize_errors=True
-env.warn_only=True
+env.colorize_errors = True
+env.warn_only = True
 
 
 def setup():
