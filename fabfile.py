@@ -21,6 +21,7 @@ env.project_name = 'DexRoBot'
 env.source_filenames = [
     'main.py',
     'analytics.py',
+    'utils.py',
     'constants.py',
 
     'config.cfg',

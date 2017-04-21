@@ -25,8 +25,9 @@ from telegram.constants import MAX_MESSAGE_LENGTH
 import requests
 import requests_cache
 
-from analytics import Analytics, AnalyticsType
+from analytics import Analytics
 from constants import *
+from utils import *
 
 BOT_TOKEN = None
 
@@ -92,7 +93,7 @@ def start_command_handler(bot, update, args):
 def restart_command_handler(bot, update):
     message = update.message
 
-    if not check_admin(bot, message):
+    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
     bot.sendMessage(message.chat_id, 'Restarting...' if cli_args.debug else 'Restarting in 1 second...')
@@ -106,24 +107,13 @@ def logs_command_handler(bot, update):
     message = update.message
     chat_id = message.chat_id
 
-    if not check_admin(bot, message):
+    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
     try:
         bot.sendDocument(chat_id, document=open('errors.log', 'rb'))
     except:
         bot.sendMessage(chat_id, 'Log is empty')
-
-
-def check_admin(bot, message):
-    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
-
-    if not ADMIN_USER_ID or message.from_user.id != ADMIN_USER_ID:
-        bot.sendMessage(message.chat_id, 'You are not allowed to restart the bot')
-
-        return False
-
-    return True
 
 
 def inline_query_handler(bot, update):
