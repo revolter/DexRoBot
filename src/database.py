@@ -28,27 +28,30 @@ class BaseModel(Model):
 
 class User(BaseModel):
     id = TextField(primary_key=True, unique=True, default=uuid4)
-    telegram_id = BigIntegerField()
+    telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField()
 
 database.connect()
 
 User.create_table(True)
 
+
 def create_user(id, username):
     current_date_time = datetime.now()
 
     try:
-        try:
-            db_user = User.get(User.telegram_id == id)
+        defaults = {
+            'telegram_username': username,
 
-            db_user.telegram_username = username
-            db_user.updated_at = current_date_time
-        except (PeeweeException, DoesNotExist):
-            db_user = User.create(telegram_id=id, telegram_username=username, updated_at=current_date_time)
+            'updated_at': current_date_time
+        }
 
-        if db_user:
-            db_user.save()
+        (db_user, is_created) = User.get_or_create(telegram_id=id, defaults=defaults)
+
+        db_user.telegram_username = username
+        db_user.updated_at = current_date_time
+
+        db_user.save()
     except PeeweeException as error:
         logger.error('Database error: {}'.format(error))
 
