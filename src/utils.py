@@ -37,6 +37,7 @@ def check_admin(bot, message, analytics, admin_user_id):
 
     return True
 
+
 def get_user(update):
     try:
         user = update.message.from_user
@@ -54,6 +55,7 @@ def get_user(update):
 
     return user
 
+
 def get_no_results_message(query):
     url = DEX_SEARCH_URL_FORMAT.format(quote(query))
 
@@ -64,12 +66,14 @@ def get_no_results_message(query):
 
     return message
 
+
 def send_no_results_message(bot, chat_id, query):
     bot.sendMessage(
         chat_id, get_no_results_message(query),
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
     )
+
 
 def get_definitions(update, query, analytics, cli_args):
     user = get_user(update)
@@ -217,6 +221,7 @@ def get_definitions(update, query, analytics, cli_args):
         definitions.append(dex_definition_result)
 
     return definitions, offset
+
 
 def get_inline_keyboard_buttons(query, definitions_count, offset):
     paging_buttons = list()
