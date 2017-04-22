@@ -56,8 +56,11 @@ def create_user(id, username):
 def get_users_table():
     users_table = ''
 
-    for user in User.select():
-        users_table = '{0}\n{1.telegram_id} | @{1.telegram_username} | {1.created_at}'.format(users_table, user)
+    try:
+        for user in User.select():
+            users_table = '{0}\n{1.telegram_id} | @{1.telegram_username} | {1.created_at}'.format(users_table, user)
+    except PeeweeException:
+        pass
 
     if not users_table:
         users_table = 'No users'
