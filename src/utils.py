@@ -220,8 +220,6 @@ def get_definitions(update, query, analytics, cli_args):
     return definitions, offset
 
 def get_inline_keyboard_buttons(query, definitions_count, offset):
-    buttons = list()
-
     paging_buttons = list()
 
     if offset != 0:
@@ -244,6 +242,4 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
 
         paging_buttons.append(next_button)
 
-    buttons.append(paging_buttons)
-
-    return buttons
+    return [paging_buttons]
