@@ -63,8 +63,9 @@ def start_command_handler(bot, update, args):
         bot.sendMessage(
             chat_id, (
                 'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
-                '[dexonline.ro](http://dexonline.ro). '
-                'Încearcă să scrii @DexRoBot _cuvânt_ în orice chat.'
+                '[dexonline.ro](http://dexonline.ro).\n'
+                'Poți scrie direct cuvântul căutat aici în chat '
+                'sau poți să scrii @DexRoBot _cuvânt_ în orice alt chat.'
             ),
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
