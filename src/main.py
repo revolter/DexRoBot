@@ -29,7 +29,7 @@ error_logging_handler = logging.FileHandler('errors.log')
 error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
 error_logging_handler.setLevel(logging.ERROR)
 
-logging.getLogger('').addHandler(error_logging_handler)
+logging.getLogger().addHandler(error_logging_handler)
 
 logger = logging.getLogger(__name__)
 
