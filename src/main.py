@@ -146,18 +146,18 @@ def inline_query_handler(bot, update):
 
         logger.info('{} {}'.format(user_identification, query))
 
-    (results, offset) = get_definitions(update, query, analytics, cli_args)
+    (definitions, offset) = get_definitions(update, query, analytics, cli_args)
 
-    results_count = len(results)
+    definitions_count = len(definitions)
 
     no_results_text = None
     no_results_parameter = None
 
-    if results_count == 0:
+    if definitions_count == 0:
         no_results_text = 'Niciun rezultat'
         no_results_parameter = base64.urlsafe_b64encode(query.encode()).decode()
     else:
-        results = results[:MESSAGES_COUNT_LIMIT]
+        definitions = definitions[:MESSAGES_COUNT_LIMIT]
 
     cache_time = int(timedelta(hours=1).total_seconds())
 
@@ -166,11 +166,11 @@ def inline_query_handler(bot, update):
 
     next_offset = None
 
-    if results_count > len(results):
+    if definitions_count > len(definitions):
         next_offset = offset + MESSAGES_COUNT_LIMIT
 
     inline_query.answer(
-        results,
+        definitions,
         cache_time=cache_time,
         next_offset=next_offset,
         switch_pm_text=no_results_text,

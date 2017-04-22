@@ -68,7 +68,7 @@ def get_definitions(update, query, analytics, cli_args):
 
         dex_raw_definitions = [dex_raw_definitions[cli_args.index]]
 
-    results = list()
+    definitions = list()
 
     offset_string = update.inline_query.offset
     offset = 0
@@ -173,6 +173,6 @@ def get_definitions(update, query, analytics, cli_args):
             )
         )
 
-        results.append(dex_definition_result)
+        definitions.append(dex_definition_result)
 
-    return results, offset
+    return definitions, offset
