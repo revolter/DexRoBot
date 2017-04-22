@@ -43,14 +43,14 @@ def start_command_handler(bot, update, args):
     message = update.message
     chat_id = message.chat_id
 
-    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
-
     query = ' '.join(args)
 
     try:
         query = base64.urlsafe_b64decode(query).decode('utf-8')
     except:
         pass
+
+    analytics.track(AnalyticsType.COMMAND, message.from_user, '/start {}'.format(query))
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
