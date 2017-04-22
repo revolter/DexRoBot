@@ -10,13 +10,16 @@ import os
 import sys
 import time
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, InlineQueryHandler, Updater
+from telegram import ChatAction, InlineKeyboardMarkup
+from telegram.ext import (
+    CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler,
+    Filters, Updater
+)
 
 import requests_cache
 
 from analytics import Analytics
-from constants import LOGS_FORMAT, DEX_SEARCH_URL_FORMAT, MESSAGES_COUNT_LIMIT
+from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT
 from utils import *
 
 BOT_TOKEN = None
@@ -65,18 +68,7 @@ def start_command_handler(bot, update, args):
 
         return
 
-    url = DEX_SEARCH_URL_FORMAT.format(quote(query))
-
-    reply = (
-        'Niciun rezultat găsit pentru "{}". '
-        'Incearcă o căutare in tot textul definițiilor [aici]({}).'
-    ).format(query, url)
-
-    bot.sendMessage(
-        chat_id, reply,
-        parse_mode=ParseMode.MARKDOWN,
-        disable_web_page_preview=True
-    )
+    send_no_results_message(bot, chat_id, query)
 
 
 def restart_command_handler(bot, update):
@@ -177,6 +169,68 @@ def inline_query_handler(bot, update):
     )
 
 
+def message_handler(bot, update):
+    message = update.message
+    query = message.text
+    chat_id = message.chat.id
+    user = message.from_user
+
+    bot.sendChatAction(chat_id, ChatAction.TYPING)
+
+    analytics.track(AnalyticsType.MESSAGE, user, query)
+
+    (definitions, offset) = get_definitions(update, query, analytics, cli_args)
+
+    if len(definitions) == 0:
+        send_no_results_message(bot, chat_id, query)
+    else:
+        buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+
+        reply_markup = InlineKeyboardMarkup(buttons)
+
+        definition = definitions[offset]
+        definition_content = definition.input_message_content
+        definition_text = definition_content.message_text
+
+        bot.sendMessage(
+            chat_id, definition_text,
+            reply_markup=reply_markup,
+            parse_mode=definition_content.parse_mode,
+            disable_web_page_preview=True
+        )
+
+
+def message_answer_handler(bot, update):
+    callback_query = update.callback_query
+    callback_message = callback_query.message
+    callback_data = json.loads(callback_query.data)
+
+    chat_id = callback_message.chat_id
+    message_id = callback_message.message_id
+
+    query = callback_data['query']
+    offset = callback_data['offset']
+
+    (definitions, _) = get_definitions(update, query, analytics, cli_args)
+
+    buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+
+    reply_markup = InlineKeyboardMarkup(buttons)
+
+    definition = definitions[offset]
+    definition_content = definition.input_message_content
+    definition_text = definition_content.message_text
+
+    bot.editMessageText(
+        definition_text,
+        chat_id=chat_id,
+        message_id=message_id,
+        reply_markup=reply_markup,
+        parse_mode=definition_content.parse_mode,
+        disable_web_page_preview=True
+    )
+
+
 def error_handler(bot, update, error):
     logger.error('Update "{}" caused error "{}"'.format(update, error))
 
@@ -191,6 +245,9 @@ def main():
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
+
+    dispatcher.add_handler(MessageHandler(Filters.text, message_handler))
+    dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
 
     dispatcher.add_error_handler(error_handler)
 

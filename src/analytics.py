@@ -19,6 +19,7 @@ class AnalyticsType(Enum):
     EMPTY_QUERY = 'empty_query'
     INLINE_QUERY = 'inline_query'
     COMMAND = 'command'
+    MESSAGE = 'message'
 
 
 class Analytics:

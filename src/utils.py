@@ -4,18 +4,22 @@
 from urllib.parse import quote
 from uuid import uuid4
 
+import json
 import logging
 
 from lxml import etree, html
 
-from telegram import InlineQueryResultArticle, InputTextMessageContent, ParseMode
+from telegram import (
+    InlineKeyboardButton, InlineQueryResultArticle,
+    InputTextMessageContent, ParseMode
+)
 from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_URL_FORMAT,
+    DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
     UNICODE_SUPERSCRIPTS, MESSAGE_TITLE_LENGTH_LIMIT
@@ -34,9 +38,42 @@ def check_admin(bot, message, analytics, admin_user_id):
 
     return True
 
+def get_user(update):
+    try:
+        user = update.message.from_user
+    except (NameError, AttributeError):
+        try:
+            user = update.inline_query.from_user
+        except (NameError, AttributeError):
+            try:
+                user = update.chosen_inline_result.from_user
+            except (NameError, AttributeError):
+                try:
+                    user = update.callback_query.from_user
+                except (NameError, AttributeError):
+                    return None
+
+    return user
+
+def get_no_results_message(query):
+    url = DEX_SEARCH_URL_FORMAT.format(quote(query))
+
+    message = (
+        'Niciun rezultat găsit pentru "{}". '
+        'Incearcă o căutare in tot textul definițiilor [aici]({}).'
+    ).format(query, url)
+
+    return message
+
+def send_no_results_message(bot, chat_id, query):
+    bot.sendMessage(
+        chat_id, get_no_results_message(query),
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True
+    )
 
 def get_definitions(update, query, analytics, cli_args):
-    user = update.inline_query.from_user
+    user = get_user(update)
 
     if cli_args.fragment:
         dex_url = 'debug'
@@ -70,15 +107,20 @@ def get_definitions(update, query, analytics, cli_args):
 
     definitions = list()
 
-    offset_string = update.inline_query.offset
+    offset_string = None
     offset = 0
+
+    is_inline_query = update.inline_query is not None
+
+    if is_inline_query:
+        offset_string = update.inline_query.offset
 
     if offset_string:
         offset = int(offset_string)
 
         if offset < len(dex_raw_definitions):
             dex_raw_definitions = dex_raw_definitions[offset + 1:]
-    else:
+    elif is_inline_query:
         analytics.track(AnalyticsType.INLINE_QUERY, user, query)
 
     for dex_raw_definition in dex_raw_definitions:
@@ -176,3 +218,32 @@ def get_definitions(update, query, analytics, cli_args):
         definitions.append(dex_definition_result)
 
     return definitions, offset
+
+def get_inline_keyboard_buttons(query, definitions_count, offset):
+    buttons = list()
+
+    paging_buttons = list()
+
+    if offset != 0:
+        previous_data = {
+            'query': query,
+            'offset': offset - 1
+        }
+
+        previous_button = InlineKeyboardButton('⬅️', callback_data=json.dumps(previous_data))
+
+        paging_buttons.append(previous_button)
+
+    if offset < definitions_count - 1:
+        next_data = {
+            'query': query,
+            'offset': offset + 1
+        }
+
+        next_button = InlineKeyboardButton('➡️', callback_data=json.dumps(next_data))
+
+        paging_buttons.append(next_button)
+
+    buttons.append(paging_buttons)
+
+    return buttons
