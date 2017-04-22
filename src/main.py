@@ -192,6 +192,9 @@ def message_handler(bot, update):
     chat_id = message.chat.id
     user = message.from_user
 
+    if len(message.entities) > 0:  # most probably the message was sent via a bot
+        return
+
     bot.sendChatAction(chat_id, ChatAction.TYPING)
 
     analytics.track(AnalyticsType.MESSAGE, user, query)
