@@ -56,3 +56,10 @@ def deploy(filename=None):
             run('source env/bin/activate; pip install -r requirements.txt')
         else:
             put('src/{}'.format(filename), '~/{.project_name}/'.format(env))
+
+
+def execute(command=None):
+    if not command:
+        return
+
+    run(command)
