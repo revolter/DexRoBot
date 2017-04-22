@@ -20,6 +20,7 @@ import requests_cache
 
 from analytics import Analytics
 from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT
+from database import create_user
 from utils import *
 
 BOT_TOKEN = None
@@ -42,6 +43,7 @@ analytics = None
 def start_command_handler(bot, update, args):
     message = update.message
     chat_id = message.chat_id
+    user = message.from_user
 
     query = ' '.join(args)
 
@@ -50,7 +52,9 @@ def start_command_handler(bot, update, args):
     except:
         pass
 
-    analytics.track(AnalyticsType.COMMAND, message.from_user, '/start {}'.format(query))
+    analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
+
+    create_user(user.id, user.username)
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')

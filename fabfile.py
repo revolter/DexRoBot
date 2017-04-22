@@ -20,8 +20,9 @@ except configparser.Error as error:
 env.project_name = 'DexRoBot'
 env.source_filenames = [
     'main.py',
-    'analytics.py',
+    'database.py',
     'utils.py',
+    'analytics.py',
     'constants.py',
 
     'config.cfg',

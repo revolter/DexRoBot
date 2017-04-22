@@ -165,3 +165,6 @@ fabfile.cfg
 
 # cache
 src/cache.sqlite
+
+# database
+dex.sqlite
