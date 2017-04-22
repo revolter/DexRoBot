@@ -59,4 +59,7 @@ def get_users_table():
     for user in User.select():
         users_table = '{0}\n{1.telegram_id} | @{1.telegram_username} | {1.created_at}'.format(users_table, user)
 
+    if not users_table:
+        users_table = 'No users'
+
     return users_table
