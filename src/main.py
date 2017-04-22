@@ -20,7 +20,7 @@ import requests_cache
 
 from analytics import Analytics
 from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT
-from database import create_user, get_users_table
+from database import User
 from utils import *
 
 BOT_TOKEN = None
@@ -54,7 +54,7 @@ def start_command_handler(bot, update, args):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
-    create_user(user.id, user.username)
+    User.create_user(user.id, user.username)
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
@@ -108,7 +108,7 @@ def users_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.sendMessage(chat_id, get_users_table())
+    bot.sendMessage(chat_id, User.get_users_table())
 
 
 def inline_query_handler(bot, update):
