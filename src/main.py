@@ -20,7 +20,7 @@ import requests_cache
 
 from analytics import Analytics
 from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT
-from database import create_user
+from database import create_user, get_users_table
 from utils import *
 
 BOT_TOKEN = None
@@ -99,6 +99,16 @@ def logs_command_handler(bot, update):
         bot.sendDocument(chat_id, open('errors.log', 'rb'))
     except:
         bot.sendMessage(chat_id, 'Log is empty')
+
+
+def users_command_handler(bot, update):
+    message = update.message
+    chat_id = message.chat_id
+
+    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+        return
+
+    bot.sendMessage(chat_id, get_users_table())
 
 
 def inline_query_handler(bot, update):
@@ -245,8 +255,10 @@ def main():
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler('start', start_command_handler, pass_args=True))
+
     dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
+    dispatcher.add_handler(CommandHandler('users', users_command_handler))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
 

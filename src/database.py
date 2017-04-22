@@ -51,3 +51,12 @@ def create_user(id, username):
             db_user.save()
     except PeeweeException as error:
         logger.error('Database error: {}'.format(error))
+
+
+def get_users_table():
+    users_table = ''
+
+    for user in User.select():
+        users_table = '{0}\n{1.telegram_id} | @{1.telegram_username} | {1.created_at}'.format(users_table, user)
+
+    return users_table
