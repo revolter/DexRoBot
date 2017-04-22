@@ -73,8 +73,7 @@ def start_command_handler(bot, update, args):
     ).format(query, url)
 
     bot.sendMessage(
-        chat_id=chat_id,
-        text=reply,
+        chat_id, reply,
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
     )
@@ -101,7 +100,7 @@ def logs_command_handler(bot, update):
         return
 
     try:
-        bot.sendDocument(chat_id, document=open('errors.log', 'rb'))
+        bot.sendDocument(chat_id, open('errors.log', 'rb'))
     except:
         bot.sendMessage(chat_id, 'Log is empty')
 
