@@ -118,9 +118,9 @@ def inline_query_handler(bot, update):
     inline_query = update.inline_query
     user = inline_query.from_user
 
-    if cli_args.fragment:
-        query = None
-    else:
+    query = None
+
+    if not cli_args.fragment:
         if cli_args.query:
             query = cli_args.query
         else:
