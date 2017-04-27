@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from datetime import timedelta
+
 import re
 
 GOOGLE_HEADERS = {'User-Agent': 'DexRoBot'}
@@ -25,3 +27,5 @@ UNICODE_SUPERSCRIPTS = '⁰¹²³⁴⁵⁶⁷⁸⁹'
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
+
+RESULTS_CACHE_TIME = timedelta(weeks=1)

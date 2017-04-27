@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from datetime import timedelta
-
 import argparse
 import base64
 import configparser
@@ -21,7 +19,7 @@ from telegram.ext import (
 import requests_cache
 
 from analytics import Analytics, AnalyticsType
-from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT
+from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
 from database import User
 from utils import check_admin, send_no_results_message, get_definitions, get_inline_keyboard_buttons
 
@@ -167,7 +165,7 @@ def inline_query_handler(bot, update):
     else:
         definitions = definitions[:MESSAGES_COUNT_LIMIT]
 
-    cache_time = int(timedelta(days=1).total_seconds())
+    cache_time = int(RESULTS_CACHE_TIME.total_seconds())
 
     if cli_args.debug:
         cache_time = 0
@@ -365,7 +363,7 @@ if __name__ == '__main__':
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
 
-    requests_cache.install_cache(expire_after=timedelta(days=1))
+    requests_cache.install_cache(expire_after=RESULTS_CACHE_TIME)
 
     if cli_args.query or cli_args.fragment:
         class Dummy:
