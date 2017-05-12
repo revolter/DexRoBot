@@ -223,6 +223,9 @@ def message_answer_handler(bot, update):
     callback_message = callback_query.message
     callback_data = json.loads(callback_query.data)
 
+    if not callback_data:
+        return
+
     chat_id = callback_message.chat_id
     message_id = callback_message.message_id
 

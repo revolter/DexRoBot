@@ -21,7 +21,8 @@ from constants import (
     DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
-    UNICODE_SUPERSCRIPTS, MESSAGE_TITLE_LENGTH_LIMIT
+    UNICODE_SUPERSCRIPTS, MESSAGE_TITLE_LENGTH_LIMIT,
+    PREVIOUS_PAGE_ICON, NEXT_PAGE_ICON, NO_PAGE_ICON
 )
 
 logger = logging.getLogger(__name__)
@@ -226,24 +227,31 @@ def get_definitions(update, query, analytics, cli_args):
 def get_inline_keyboard_buttons(query, definitions_count, offset):
     paging_buttons = list()
 
-    if offset != 0:
+    is_first_page = offset == 0
+    is_last_page = offset == definitions_count - 1
+
+    if is_first_page:
+        previous_data = None
+    else:
         previous_data = {
             'query': query,
             'offset': offset - 1
         }
 
-        previous_button = InlineKeyboardButton('⬅️', callback_data=json.dumps(previous_data))
+    previous_button = InlineKeyboardButton(NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON, callback_data=json.dumps(previous_data))
 
-        paging_buttons.append(previous_button)
+    paging_buttons.append(previous_button)
 
-    if offset < definitions_count - 1:
+    if is_last_page:
+        next_data = None
+    else:
         next_data = {
             'query': query,
             'offset': offset + 1
         }
 
-        next_button = InlineKeyboardButton('➡️', callback_data=json.dumps(next_data))
+    next_button = InlineKeyboardButton(NO_PAGE_ICON if is_last_page else NEXT_PAGE_ICON, callback_data=json.dumps(next_data))
 
-        paging_buttons.append(next_button)
+    paging_buttons.append(next_button)
 
     return [paging_buttons]
