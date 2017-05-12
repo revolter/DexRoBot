@@ -109,7 +109,7 @@ def get_definitions(update, query, analytics, cli_args):
 
         dex_raw_definitions = [dex_raw_definitions[cli_args.index]]
 
-    definitions = list()
+    definitions = []
 
     offset_string = None
     offset = 0
@@ -225,7 +225,7 @@ def get_definitions(update, query, analytics, cli_args):
 
 
 def get_inline_keyboard_buttons(query, definitions_count, offset):
-    paging_buttons = list()
+    paging_buttons = []
 
     is_first_page = offset == 0
     is_last_page = offset == definitions_count - 1
@@ -238,10 +238,6 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
             'offset': offset - 1
         }
 
-    previous_button = InlineKeyboardButton(NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON, callback_data=json.dumps(previous_data))
-
-    paging_buttons.append(previous_button)
-
     if is_last_page:
         next_data = None
     else:
@@ -250,8 +246,10 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
             'offset': offset + 1
         }
 
+    previous_button = InlineKeyboardButton(NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON, callback_data=json.dumps(previous_data))
     next_button = InlineKeyboardButton(NO_PAGE_ICON if is_last_page else NEXT_PAGE_ICON, callback_data=json.dumps(next_data))
 
+    paging_buttons.append(previous_button)
     paging_buttons.append(next_button)
 
     return [paging_buttons]
