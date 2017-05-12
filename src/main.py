@@ -224,7 +224,7 @@ def message_answer_handler(bot, update):
     callback_data = json.loads(callback_query.data)
 
     if not callback_data:
-        update.callback_query.answer()
+        callback_query.answer()
 
         return
 
