@@ -230,6 +230,10 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
     is_first_page = offset == 0
     is_last_page = offset == definitions_count - 1
 
+    previous_text = NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON
+    current_text = '{} / {}'.format(offset + 1, definitions_count)
+    next_text = NO_PAGE_ICON if is_last_page else NEXT_PAGE_ICON
+
     if is_first_page:
         previous_data = None
     else:
@@ -246,9 +250,9 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
             'offset': offset + 1
         }
 
-    previous_button = InlineKeyboardButton(NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON, callback_data=json.dumps(previous_data))
-    current_button = InlineKeyboardButton('{} / {}'.format(offset + 1, definitions_count), callback_data=json.dumps(None))
-    next_button = InlineKeyboardButton(NO_PAGE_ICON if is_last_page else NEXT_PAGE_ICON, callback_data=json.dumps(next_data))
+    previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
+    current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(None))
+    next_button = InlineKeyboardButton(next_text, callback_data=json.dumps(next_data))
 
     paging_buttons.append(previous_button)
     paging_buttons.append(current_button)
