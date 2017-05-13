@@ -22,7 +22,7 @@ from constants import (
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
     UNICODE_SUPERSCRIPTS, MESSAGE_TITLE_LENGTH_LIMIT,
-    PREVIOUS_PAGE_ICON, NEXT_PAGE_ICON, NO_PAGE_ICON
+    PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON
 )
 
 logger = logging.getLogger(__name__)
@@ -233,25 +233,28 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
     is_first_page = offset == 0
     is_last_page = offset == definitions_count - 1
 
-    previous_text = NO_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON
+    previous_offset = offset - 1
+    next_offset = offset + 1
+
+    previous_text = PREVIOUS_OVERLAP_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON
     current_text = '{} / {}'.format(offset + 1, definitions_count)
-    next_text = NO_PAGE_ICON if is_last_page else NEXT_PAGE_ICON
+    next_text = NEXT_OVERLAP_PAGE_ICON if is_last_page else NEXT_PAGE_ICON
 
     if is_first_page:
-        previous_data = None
-    else:
-        previous_data = {
-            'query': query,
-            'offset': offset - 1
-        }
+        previous_offset = definitions_count - 1
+
+    previous_data = {
+        'query': query,
+        'offset': previous_offset
+    }
 
     if is_last_page:
-        next_data = None
-    else:
-        next_data = {
-            'query': query,
-            'offset': offset + 1
-        }
+        next_offset = 0
+
+    next_data = {
+        'query': query,
+        'offset': next_offset
+    }
 
     previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
     current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(None))
