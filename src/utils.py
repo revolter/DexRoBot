@@ -227,6 +227,9 @@ def get_definitions(update, query, analytics, cli_args):
 def get_inline_keyboard_buttons(query, definitions_count, offset):
     paging_buttons = []
 
+    if definitions_count == 1:
+        return paging_buttons
+
     is_first_page = offset == 0
     is_last_page = offset == definitions_count - 1
 
