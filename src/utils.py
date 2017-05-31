@@ -9,7 +9,7 @@ import logging
 from lxml import etree, html
 
 from telegram import (
-    InlineKeyboardButton, InlineQueryResultArticle,
+    InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle,
     InputTextMessageContent, ParseMode
 )
 from telegram.constants import MAX_MESSAGE_LENGTH
@@ -208,12 +208,17 @@ def get_definitions(update, query, analytics, cli_args):
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
 
+        inline_keyboard_buttons = get_inline_keyboard_buttons(query, definitions_count, dex_definition_index)
+
+        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+
         dex_definition_result = InlineQueryResultArticle(
             id=uuid4(),
             title=dex_definition_title,
             thumb_url=DEX_THUMBNAIL_URL,
             url=dex_definition_url,
             hide_url=True,
+            reply_markup=reply_markup,
             input_message_content=InputTextMessageContent(
                 message_text=dex_definition_html,
                 parse_mode=ParseMode.HTML,

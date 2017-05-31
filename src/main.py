@@ -220,7 +220,6 @@ def message_handler(bot, update):
 
 def message_answer_handler(bot, update):
     callback_query = update.callback_query
-    callback_message = callback_query.message
     callback_data = json.loads(callback_query.data)
 
     if not callback_data:
@@ -228,8 +227,15 @@ def message_answer_handler(bot, update):
 
         return
 
-    chat_id = callback_message.chat_id
-    message_id = callback_message.message_id
+    is_inline = callback_query.inline_message_id != None
+
+    if is_inline:
+        message_id = callback_query.inline_message_id
+    else:
+        callback_message = callback_query.message
+
+        chat_id = callback_message.chat_id
+        message_id = callback_message.message_id
 
     query = callback_data['query']
     offset = callback_data['offset']
@@ -244,14 +250,23 @@ def message_answer_handler(bot, update):
     definition_content = definition.input_message_content
     definition_text = definition_content.message_text
 
-    bot.editMessageText(
-        definition_text,
-        chat_id=chat_id,
-        message_id=message_id,
-        reply_markup=reply_markup,
-        parse_mode=definition_content.parse_mode,
-        disable_web_page_preview=True
-    )
+    if is_inline:
+        bot.editMessageText(
+            definition_text,
+            inline_message_id=message_id,
+            reply_markup=reply_markup,
+            parse_mode=definition_content.parse_mode,
+            disable_web_page_preview=True
+        )
+    else:
+        bot.editMessageText(
+            definition_text,
+            chat_id=chat_id,
+            message_id=message_id,
+            reply_markup=reply_markup,
+            parse_mode=definition_content.parse_mode,
+            disable_web_page_preview=True
+        )
 
 
 def error_handler(bot, update, error):
