@@ -97,12 +97,14 @@ def get_definitions(update, query, analytics, cli_args):
 
         dex_url = dex_api_url[:-5]  # /json
 
+    definitions_count = len(dex_raw_definitions)
+
     # set the index of the definitions
-    for index in range(len(dex_raw_definitions)):
+    for index in range(definitions_count):
         dex_raw_definitions[index]['index'] = index
 
     if cli_args.index is not None:
-        if cli_args.index >= len(dex_raw_definitions):
+        if cli_args.index >= definitions_count:
             logger.warning('Index out of bounds')
 
             return
@@ -122,7 +124,7 @@ def get_definitions(update, query, analytics, cli_args):
     if offset_string:
         offset = int(offset_string)
 
-        if offset < len(dex_raw_definitions):
+        if offset < definitions_count:
             dex_raw_definitions = dex_raw_definitions[offset + 1:]
     elif is_inline_query:
         analytics.track(AnalyticsType.INLINE_QUERY, user, query)

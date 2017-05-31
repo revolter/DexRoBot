@@ -202,9 +202,9 @@ def message_handler(bot, update):
     if len(definitions) == 0:
         send_no_results_message(bot, chat_id, query)
     else:
-        buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+        inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
 
-        reply_markup = InlineKeyboardMarkup(buttons)
+        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition = definitions[offset]
         definition_content = definition.input_message_content
@@ -236,9 +236,9 @@ def message_answer_handler(bot, update):
 
     (definitions, _) = get_definitions(update, query, analytics, cli_args)
 
-    buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+    inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
 
-    reply_markup = InlineKeyboardMarkup(buttons)
+    reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
     definition = definitions[offset]
     definition_content = definition.input_message_content
