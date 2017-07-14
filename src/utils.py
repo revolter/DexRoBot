@@ -15,6 +15,7 @@ from telegram import (
 from telegram.constants import MAX_MESSAGE_LENGTH
 
 import requests
+import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
@@ -229,6 +230,19 @@ def get_definitions(update, query, analytics, cli_args):
         definitions.append(dex_definition_result)
 
     return definitions, offset
+
+
+def clear_definitions_cache(query):
+    dex_api_url = DEX_API_URL_FORMAT.format(query)
+
+    cache = requests_cache.core.get_cache()
+
+    if cache.has_url(dex_api_url):
+        cache.delete_url(dex_api_url)
+
+        return 'Cache successfully deleted for "{}"'.format(query)
+    else:
+        return 'No cache for "{}"'.format(query)
 
 
 def get_inline_keyboard_buttons(query, definitions_count, offset):

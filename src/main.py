@@ -21,7 +21,10 @@ import requests_cache
 from analytics import Analytics, AnalyticsType
 from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
 from database import User
-from utils import check_admin, send_no_results_message, get_definitions, get_inline_keyboard_buttons
+from utils import (
+    check_admin, send_no_results_message,
+    get_definitions, clear_definitions_cache, get_inline_keyboard_buttons
+)
 
 BOT_TOKEN = None
 
@@ -110,6 +113,17 @@ def users_command_handler(bot, update):
         return
 
     bot.sendMessage(chat_id, User.get_users_table())
+
+
+def clear_command_handler(bot, update, args):
+    message = update.message
+    chat_id = message.chat_id
+
+    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+        return
+
+    for query in args:
+        bot.sendMessage(chat_id, clear_definitions_cache(query))
 
 
 def inline_query_handler(bot, update):
@@ -283,6 +297,7 @@ def main():
     dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
     dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
     dispatcher.add_handler(CommandHandler('users', users_command_handler))
+    dispatcher.add_handler(CommandHandler('clear', clear_command_handler, pass_args=True))
 
     dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
 
