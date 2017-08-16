@@ -91,8 +91,14 @@ def get_definitions(update, query, analytics, cli_args):
         }]
     else:
         dex_api_url = DEX_API_URL_FORMAT.format(query)
+        dex_api_request = requests.get(dex_api_url)
 
-        dex_raw_response = requests.get(dex_api_url).json()
+        dex_api_final_url = dex_api_request.url
+
+        if not dex_api_final_url.endswith('/json'):
+            dex_api_request = requests.get('{}/json'.format(dex_api_final_url))
+
+        dex_raw_response = dex_api_request.json()
 
         dex_raw_definitions = dex_raw_response['definitions']
 
