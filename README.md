@@ -4,6 +4,10 @@
 
 Telegram Bot that uses [dexonline.ro](https://dexonline.ro)'s API to search Romanian words definitions. The bot currently runs as [@DexRoBot](https://t.me/DexRoBot).
 
+![Screenshot 1](images/screenshot_1.jpg)
+![Screenshot 2](images/screenshot_2.jpg)
+![Screenshot 3](images/screenshot_3.jpg)
+
 ## Installation
 
 Clone the project and install the dependencies by running these commands in the terminal:
