@@ -8,22 +8,39 @@ Telegram Bot that uses [dexonline.ro](https://dexonline.ro)'s API to search Roma
 ![Screenshot 2](images/screenshot_2.jpg)
 ![Screenshot 3](images/screenshot_3.jpg)
 
-## Installation
+## Getting Started
 
-Clone the project and install the dependencies by running these commands in the terminal:
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
+### Prerequisites
+
+You need to install [Homebrew](https://brew.sh) by running:
+
+```sh
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
+
+### Installing
+
+Clone the project and install the dependencies by running:
+
+```sh
 cd /desired/location/path
 git clone https://github.com/revolter/DexRoBot.git
 cd DexRoBot
-virtualenv -p python3 env
-source env/bin/activate
+
+brew install pipenv
+pipenv --three
+pipenv shell
+pipenv install
+
 cd src
-pip install -r requirements.txt
 cp config_sample.cfg config.cfg
 ```
 
-Then edit the file named `config.cfg` inside the `src` folder with the correct values and run it using `./main.py -d`.
+Then, edit the file named `config.cfg` inside the `src` folder with the correct values and run it using `./main.py -d`.
+
+Use `exit` to close the virtual environment.
 
 ## Deploy
 
@@ -31,13 +48,14 @@ You can easily deploy this to a cloud machine using [Fabric](http://fabfile.org)
 
 ```
 cd /project/location/path
-virtualenv -p python3 env-dev
-source env-dev/bin/activate
-pip install -r requirements-dev.txt
+
+pipenv shell
+pipenv install --dev
+
 cp fabfile_sample.cfg fabfile.cfg
 ```
 
-Then edit the file named `fabfile.cfg` inside the root folder with the correct values and run Fabric using:
+Then, edit the file named `fabfile.cfg` inside the root folder with the correct values and run Fabric using:
 
 ```
 fab setup

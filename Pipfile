@@ -4,8 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+lxml = "==3.7.3"
+peewee = "==2.9.2"
+python-telegram-bot = "==5.3.0"
+requests = "==2.13.0"
+requests-cache = "==0.4.13"
 
 [dev-packages]
+Fabric3 = "==1.13.1.post1"
 
 [requires]
 python_version = "3.7"
