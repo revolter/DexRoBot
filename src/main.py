@@ -241,7 +241,7 @@ def message_answer_handler(bot, update):
 
         return
 
-    is_inline = callback_query.inline_message_id != None
+    is_inline = callback_query.inline_message_id is not None
 
     if is_inline:
         message_id = callback_query.inline_message_id
@@ -381,12 +381,12 @@ if __name__ == '__main__':
     except configparser.Error as error:
         logger.error('Config error: {}'.format(error))
 
-        exit(1)
+        sys.exit(1)
 
     if not BOT_TOKEN:
         logger.error('Missing bot token')
 
-        exit(2)
+        sys.exit(2)
 
     analytics = Analytics()
 

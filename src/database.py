@@ -8,7 +8,7 @@ import logging
 from peewee import (
     Model,
     DateTimeField, TextField, BigIntegerField,
-    PeeweeException, DoesNotExist
+    PeeweeException
 )
 from playhouse.sqlite_ext import SqliteExtDatabase
 
