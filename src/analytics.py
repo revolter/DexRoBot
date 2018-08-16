@@ -5,6 +5,7 @@ from enum import Enum
 import logging
 
 from botanio import botan
+from telegram.ext.dispatcher import run_async
 
 import requests
 import requests_cache
@@ -53,6 +54,7 @@ class Analytics:
             if response.status_code != 200:
                 logger.error('Google analytics error: {}'.format(response.status_code))
 
+    @run_async
     def track(self, analytics_type, user, data):
         self.__botan_track(analytics_type, user, data)
         self.__google_track(analytics_type, user, data)
