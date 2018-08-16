@@ -1,6 +1,7 @@
-from fabric.api import cd, env, put, run, task
-
 import configparser
+import sys
+
+from fabric.api import cd, env, put, run, task
 
 try:
     config = configparser.ConfigParser()
@@ -15,7 +16,7 @@ try:
 except configparser.Error as error:
     print('Config error: {}'.format(error))
 
-    exit(1)
+    sys.exit(1)
 
 env.project_name = 'DexRoBot'
 env.source_filenames = [
