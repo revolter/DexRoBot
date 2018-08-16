@@ -393,7 +393,6 @@ if __name__ == '__main__':
     try:
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
 
-        analytics.botanToken = config.get('Botan', 'Key')
         analytics.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))

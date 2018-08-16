@@ -1,5 +1,4 @@
 appdirs==1.4.3
-botanio==1.0.0
 certifi==2017.1.23
 future==0.16.0
 lxml==3.7.3

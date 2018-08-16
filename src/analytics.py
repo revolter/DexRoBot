@@ -4,7 +4,6 @@ from enum import Enum
 
 import logging
 
-from botanio import botan
 from telegram.ext.dispatcher import run_async
 
 import requests
@@ -24,23 +23,7 @@ class AnalyticsType(Enum):
 
 class Analytics:
     def __init__(self):
-        self.botanToken = None
         self.googleToken = None
-
-    def __botan_track(self, analytics_type, user, data):
-        if not self.botanToken:
-            return
-
-        params = {
-            'query': data
-        }
-
-        botan_track = botan.track(self.botanToken, user, params, analytics_type.value)
-
-        if not botan_track:
-            logger.error('Botan analytics error')
-        elif botan_track['status'] != 'accepted':
-            logger.error('Botan analytics error: {}'.format(botan_track))
 
     def __google_track(self, analytics_type, user, data):
         if not self.googleToken:
@@ -56,5 +39,4 @@ class Analytics:
 
     @run_async
     def track(self, analytics_type, user, data):
-        self.__botan_track(analytics_type, user, data)
         self.__google_track(analytics_type, user, data)
