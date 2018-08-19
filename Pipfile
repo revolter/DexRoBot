@@ -8,7 +8,7 @@ lxml = "*"
 peewee = "*"
 python-telegram-bot = "*"
 requests = "*"
-requests-cache = "==0.4.13"
+requests-cache = "*"
 
 [dev-packages]
 fabric = "*"
