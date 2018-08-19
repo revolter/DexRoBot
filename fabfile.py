@@ -1,7 +1,9 @@
 import configparser
+import os
 import sys
 
-from fabric.api import cd, env, put, run, task
+from fabric import task
+from invoke import env
 
 try:
     config = configparser.ConfigParser()
@@ -26,45 +28,52 @@ env.source_filenames = [
     'analytics.py',
     'constants.py',
 
-    'config.cfg',
-
-    'requirements.txt'
+    'config.cfg'
 ]
-
-env.colorize_errors = True
-env.warn_only = True
+env.meta_filenames = [
+    'Pipfile',
+    'Pipfile.lock'
+]
 
 
 @task
-def execute(command=None):
+def config(context):
+    context.user = env.user
+    context.connect_kwargs = {'key_filename': os.path.expanduser(env.key_filename)}
+
+
+@task(pre=[config], hosts=env.hosts, help={'command': 'The shell command to execute on the server'})
+def execute(context, command=None):
     if not command:
         return
 
-    run(command)
+    context.run(command)
 
 
-@task
-def cleanup():
-    run('rm -r ~/{.project_name}'.format(env))
-    run('rm -r {0.project_path}/{0.project_name}'.format(env))
+@task(pre=[config], hosts=env.hosts)
+def cleanup(context):
+    context.run('rm -rf {.project_name}'.format(env))
+    context.run('rm -rf {0.project_path}/{0.project_name}'.format(env))
 
 
-@task
-def setup():
-    run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
-    run('ln -s {0.project_path}/{0.project_name} ~/{0.project_name}'.format(env))
+@task(pre=[config, cleanup], hosts=env.hosts)
+def setup(context):
+    context.run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
+    context.run('ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(env))
 
-    with cd('~/{.project_name}'.format(env)):
-        run('virtualenv -p python3 env')
+    context.run('python -m pip install --user pipenv')
 
 
-@task(default=True)
-def deploy(filename=None):
+@task(default=True, pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+def deploy(context, filename=None):
     if not filename:
         for source_filename in env.source_filenames:
-            put('src/{}'.format(source_filename), '~/{.project_name}/'.format(env))
+            context.put('src/{}'.format(source_filename), '{.project_name}/'.format(env))
 
-        with cd('~/{.project_name}'.format(env)):
-            run('source env/bin/activate; pip install -r requirements.txt')
+        for meta_filename in env.meta_filenames:
+            context.put(meta_filename, '{.project_name}/'.format(env))
+
+        with context.cd(env.project_name):
+            context.run('python -m pipenv install --three')
     else:
-        put('src/{}'.format(filename), '~/{.project_name}/'.format(env))
+        context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
