@@ -36,12 +36,11 @@ env.warn_only = True
 
 
 @task
-def setup():
-    run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
-    run('ln -s {0.project_path}/{0.project_name} ~/{0.project_name}'.format(env))
+def execute(command=None):
+    if not command:
+        return
 
-    with cd('~/{.project_name}'.format(env)):
-        run('virtualenv -p python3 env')
+    run(command)
 
 
 @task
@@ -50,21 +49,22 @@ def cleanup():
     run('rm -r {0.project_path}/{0.project_name}'.format(env))
 
 
+@task
+def setup():
+    run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
+    run('ln -s {0.project_path}/{0.project_name} ~/{0.project_name}'.format(env))
+
+    with cd('~/{.project_name}'.format(env)):
+        run('virtualenv -p python3 env')
+
+
 @task(default=True)
 def deploy(filename=None):
-    with cd('~/{.project_name}'.format(env)):
-        if not filename:
-            for source_filename in env.source_filenames:
-                put('src/{}'.format(source_filename), '~/{.project_name}/'.format(env))
+    if not filename:
+        for source_filename in env.source_filenames:
+            put('src/{}'.format(source_filename), '~/{.project_name}/'.format(env))
 
+        with cd('~/{.project_name}'.format(env)):
             run('source env/bin/activate; pip install -r requirements.txt')
-        else:
-            put('src/{}'.format(filename), '~/{.project_name}/'.format(env))
-
-
-@task
-def execute(command=None):
-    if not command:
-        return
-
-    run(command)
+    else:
+        put('src/{}'.format(filename), '~/{.project_name}/'.format(env))
