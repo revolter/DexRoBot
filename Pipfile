@@ -7,7 +7,7 @@ name = "pypi"
 lxml = "*"
 peewee = "*"
 python-telegram-bot = "*"
-requests = "==2.13.0"
+requests = "*"
 requests-cache = "==0.4.13"
 
 [dev-packages]
