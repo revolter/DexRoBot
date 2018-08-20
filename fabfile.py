@@ -39,7 +39,7 @@ env.meta_filenames = [
 @task
 def config(context):
     context.user = env.user
-    context.connect_kwargs = {'key_filename': os.path.expanduser(env.key_filename)}
+    context.connect_kwargs.key_filename = os.path.expanduser(env.key_filename)
 
 
 @task(pre=[config], hosts=env.hosts, help={'command': 'The shell command to execute on the server'})
