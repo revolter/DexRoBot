@@ -77,3 +77,9 @@ def deploy(context, filename=None):
             context.run('python -m pipenv install --three')
     else:
         context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
+
+
+@task(pre=[config], hosts=env.hosts)
+def backup_db(context):
+    with context.cd(env.project_name):
+        context.get('{.project_name}/dex.sqlite'.format(env), 'dex_backup.sqlite')

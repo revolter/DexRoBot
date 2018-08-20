@@ -206,5 +206,6 @@ fabfile.cfg
 # cache
 cache.sqlite
 
-# database
+# databases
 dex.sqlite
+dex_backup.sqlite
