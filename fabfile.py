@@ -52,8 +52,12 @@ def execute(context, command=None):
 
 @task(pre=[config], hosts=env.hosts)
 def cleanup(context):
-    context.run('rm -rf {.project_name}'.format(env))
-    context.run('rm -rf {0.project_path}/{0.project_name}'.format(env))
+    prompt_message = 'Are you sure you want to completely delete the project "{0.project_name}" from "{0.hosts[0]}"? y/n: '.format(env)
+    response = input(prompt_message)
+
+    if response.lower() == 'y':
+        context.run('rm -rf {.project_name}'.format(env))
+        context.run('rm -rf {0.project_path}/{0.project_name}'.format(env))
 
 
 @task(pre=[config, cleanup], hosts=env.hosts)
