@@ -56,16 +56,16 @@ def cleanup(context):
     response = input(prompt_message)
 
     if response.lower() == 'y':
-        context.run('rm -rf {.project_name}'.format(env))
-        context.run('rm -rf {0.project_path}/{0.project_name}'.format(env))
+        execute(context, 'rm -rf {.project_name}'.format(env))
+        execute(context, 'rm -rf {0.project_path}/{0.project_name}'.format(env))
 
 
 @task(pre=[config, cleanup], hosts=env.hosts)
 def setup(context):
-    context.run('mkdir -p {0.project_path}/{0.project_name}'.format(env))
-    context.run('ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(env))
+    execute(context, 'mkdir -p {0.project_path}/{0.project_name}'.format(env))
+    execute(context, 'ln -s {0.project_path}/{0.project_name} {0.project_name}'.format(env))
 
-    context.run('python -m pip install --user pipenv')
+    execute(context, 'python -m pip install --user pipenv')
 
 
 @task(default=True, pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
@@ -78,7 +78,7 @@ def deploy(context, filename=None):
             context.put(meta_filename, '{.project_name}/'.format(env))
 
         with context.cd(env.project_name):
-            context.run('python -m pipenv install --three')
+            execute(context, 'python -m pipenv install --three')
     else:
         context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
 
