@@ -68,9 +68,9 @@ def setup(context):
     execute(context, 'python -m pip install --user pipenv')
 
 
-@task(pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
-def deploy(context, filename=None):
-    if not filename:
+@task(pre=[config], hosts=env.hosts, help={'type': 'The type of the file to be deployed. Only required if `filename` is specified. Valid values are `source` and `meta`.', 'filename': 'An optional filename to deploy to the server'})
+def deploy(context, type='source', filename=None):
+    if not type or not filename:
         for source_filename in env.source_filenames:
             context.put('src/{}'.format(source_filename), '{.project_name}/'.format(env))
 
@@ -80,7 +80,9 @@ def deploy(context, filename=None):
         with context.cd(env.project_name):
             execute(context, 'python -m pipenv install --three')
     else:
-        context.put('src/{}'.format(filename), '{.project_name}/'.format(env))
+        file_path_format = 'src/{}' if type == 'source' else '{}'
+
+        context.put(file_path_format.format(filename), '{.project_name}/'.format(env))
 
 
 @task(pre=[config], hosts=env.hosts)
