@@ -68,7 +68,7 @@ def setup(context):
     execute(context, 'python -m pip install --user pipenv')
 
 
-@task(default=True, pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
+@task(pre=[config], hosts=env.hosts, help={'filename': 'An optional filename to deploy to the server'})
 def deploy(context, filename=None):
     if not filename:
         for source_filename in env.source_filenames:
