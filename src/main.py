@@ -200,6 +200,8 @@ def inline_query_handler(bot, update):
 
 def message_handler(bot, update):
     message = update.message
+
+    message_id = message.message_id
     query = message.text
     chat_id = message.chat.id
     user = message.from_user
@@ -228,7 +230,8 @@ def message_handler(bot, update):
             chat_id, definition_text,
             reply_markup=reply_markup,
             parse_mode=definition_content.parse_mode,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
+            reply_to_message_id=message_id
         )
 
 
