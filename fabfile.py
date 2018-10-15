@@ -85,7 +85,12 @@ def deploy(context, type='source', filename=None):
         context.put(file_path_format.format(filename), '{.project_name}/'.format(env))
 
 
+@task(pre=[config], hosts=env.hosts, help={'filename': 'The filename to backup locally from the server'})
+def backup(context, filename):
+    with context.cd(env.project_name):
+        context.get('{.project_name}/{}'.format(env, filename), 'backup_{}'.format(filename))
+
+
 @task(pre=[config], hosts=env.hosts)
 def backup_db(context):
-    with context.cd(env.project_name):
-        context.get('{.project_name}/dex.sqlite'.format(env), 'dex_backup.sqlite')
+    backup(context, 'dex.sqlite')

@@ -203,9 +203,11 @@ fabfile.cfg
 # PyCharm
 .idea
 
+# backups
+backup_*
+
 # cache
 cache.sqlite
 
 # databases
 dex.sqlite
-dex_backup.sqlite
