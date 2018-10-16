@@ -57,7 +57,10 @@ def start_command_handler(bot, update, args):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
-    User.create_user(user.id, user.username)
+    db_user = User.create_user(user.id, user.username)
+
+    if db_user and ADMIN_USER_ID:
+        bot.send_message(ADMIN_USER_ID, 'New user: {} (@{})'.format(user.telegram_id, db_user.telegram_username))
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')

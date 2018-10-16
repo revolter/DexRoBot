@@ -47,8 +47,13 @@ class User(BaseModel):
             db_user.updated_at = current_date_time
 
             db_user.save()
+
+            if is_created:
+                return db_user
         except PeeweeException as error:
             logger.error('Database error: {}'.format(error))
+
+        return None
 
     @classmethod
     def get_users_table(cls):
