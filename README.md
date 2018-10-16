@@ -62,4 +62,4 @@ fab setup
 fab deploy
 ```
 
-You can also deploy a single file using `fab deploy:filename=main.py`
+You can also deploy a single file using `fab deploy --filename=main.py`
