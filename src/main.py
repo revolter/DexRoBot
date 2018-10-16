@@ -63,7 +63,7 @@ def start_command_handler(bot, update, args):
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
         reply_markup = InlineKeyboardMarkup([[reply_button]])
 
-        bot.sendMessage(
+        bot.send_message(
             chat_id, (
                 'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
                 '[dexonline.ro](http://dexonline.ro).\n'
@@ -85,7 +85,7 @@ def restart_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.sendMessage(message.chat_id, 'Restarting...' if cli_args.debug else 'Restarting in 1 second...')
+    bot.send_message(message.chat_id, 'Restarting...' if cli_args.debug else 'Restarting in 1 second...')
 
     time.sleep(0.2 if cli_args.debug else 1)
 
@@ -100,9 +100,9 @@ def logs_command_handler(bot, update):
         return
 
     try:
-        bot.sendDocument(chat_id, open('errors.log', 'rb'))
+        bot.send_document(chat_id, open('errors.log', 'rb'))
     except:
-        bot.sendMessage(chat_id, 'Log is empty')
+        bot.send_message(chat_id, 'Log is empty')
 
 
 def users_command_handler(bot, update):
@@ -112,7 +112,7 @@ def users_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.sendMessage(chat_id, User.get_users_table())
+    bot.send_message(chat_id, User.get_users_table())
 
 
 def clear_command_handler(bot, update, args):
@@ -123,7 +123,7 @@ def clear_command_handler(bot, update, args):
         return
 
     for query in args:
-        bot.sendMessage(chat_id, clear_definitions_cache(query))
+        bot.send_message(chat_id, clear_definitions_cache(query))
 
 
 def inline_query_handler(bot, update):
@@ -209,7 +209,7 @@ def message_handler(bot, update):
     if len(message.entities) > 0:  # most probably the message was sent via a bot
         return
 
-    bot.sendChatAction(chat_id, ChatAction.TYPING)
+    bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     analytics.track(AnalyticsType.MESSAGE, user, query)
 
@@ -226,7 +226,7 @@ def message_handler(bot, update):
         definition_content = definition.input_message_content
         definition_text = definition_content.message_text
 
-        bot.sendMessage(
+        bot.send_message(
             chat_id, definition_text,
             reply_markup=reply_markup,
             parse_mode=definition_content.parse_mode,
@@ -350,7 +350,7 @@ def main():
     logger.info('Bot started. Press Ctrl-C to stop.')
 
     if ADMIN_USER_ID:
-        updater.bot.sendMessage(ADMIN_USER_ID, 'Bot has been restarted')
+        updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
 
     updater.idle()
 

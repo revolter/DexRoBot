@@ -33,7 +33,7 @@ def check_admin(bot, message, analytics, admin_user_id):
     analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
     if not admin_user_id or message.from_user.id != admin_user_id:
-        bot.sendMessage(message.chat_id, 'You are not allowed to use this command')
+        bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
 
@@ -70,7 +70,7 @@ def get_no_results_message(query):
 
 
 def send_no_results_message(bot, chat_id, query):
-    bot.sendMessage(
+    bot.send_message(
         chat_id, get_no_results_message(query),
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True
