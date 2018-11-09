@@ -62,7 +62,7 @@ def start_command_handler(bot, update, args):
     db_user = User.create_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_description()))
+        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
@@ -117,7 +117,7 @@ def users_command_handler(bot, update):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table())
+    bot.send_message(chat_id, User.get_users_table(), parse_mode=ParseMode.MARKDOWN)
 
 
 def clear_command_handler(bot, update, args):
