@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 import argparse
 import base64
 import configparser
@@ -135,6 +137,12 @@ def inline_query_handler(bot, update):
     inline_query = update.inline_query
     user = inline_query.from_user
 
+    db_user = User.get_user_by_telegram_id(user.id)
+
+    if db_user:
+        db_user.updated_at = datetime.now()
+        db_user.save()
+
     query = None
 
     if not cli_args.fragment:
@@ -210,6 +218,12 @@ def message_handler(bot, update):
     query = message.text
     chat_id = message.chat.id
     user = message.from_user
+
+    db_user = User.get_user_by_telegram_id(user.id)
+
+    if db_user:
+        db_user.updated_at = datetime.now()
+        db_user.save()
 
     if len(message.entities) > 0:  # most probably the message was sent via a bot
         return
