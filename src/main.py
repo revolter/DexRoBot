@@ -10,6 +10,16 @@ import os
 import sys
 import time
 
+from constants import LOGS_FORMAT
+
+logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
+
+error_logging_handler = logging.FileHandler('errors.log')
+error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
+error_logging_handler.setLevel(logging.ERROR)
+
+logging.getLogger().addHandler(error_logging_handler)
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode
 from telegram.ext import (
     CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler,
@@ -19,7 +29,7 @@ from telegram.ext import (
 import requests_cache
 
 from analytics import Analytics, AnalyticsType
-from constants import LOGS_FORMAT, MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
+from constants import MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
 from database import User
 from utils import (
     check_admin, send_no_results_message,
@@ -29,14 +39,6 @@ from utils import (
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
-
-logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
-
-error_logging_handler = logging.FileHandler('errors.log')
-error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-error_logging_handler.setLevel(logging.ERROR)
-
-logging.getLogger().addHandler(error_logging_handler)
 
 logger = logging.getLogger(__name__)
 
