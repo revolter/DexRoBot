@@ -11,6 +11,8 @@ GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=even
 
 LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
+GENERIC_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 DEX_BASE_URL = 'https://dexonline.ro'
 
 DEX_API_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'definitie/{}/json')
