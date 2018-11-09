@@ -49,6 +49,8 @@ analytics = None
 
 def start_command_handler(bot, update, args):
     message = update.message
+
+    message_id = message.message_id
     chat_id = message.chat_id
     user = message.from_user
 
@@ -83,7 +85,7 @@ def start_command_handler(bot, update, args):
 
         return
 
-    send_no_results_message(bot, chat_id, query)
+    send_no_results_message(bot, chat_id, message_id, query)
 
 
 def restart_command_handler(bot, update):
@@ -235,7 +237,7 @@ def message_handler(bot, update):
     (definitions, offset) = get_definitions(update, query, analytics, cli_args)
 
     if len(definitions) == 0:
-        send_no_results_message(bot, chat_id, query)
+        send_no_results_message(bot, chat_id, message_id, query)
     else:
         inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
 

@@ -69,11 +69,12 @@ def get_no_results_message(query):
     return message
 
 
-def send_no_results_message(bot, chat_id, query):
+def send_no_results_message(bot, chat_id, message_id, query):
     bot.send_message(
         chat_id, get_no_results_message(query),
         parse_mode=ParseMode.MARKDOWN,
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
+        reply_to_message_id=message_id
     )
 
 
