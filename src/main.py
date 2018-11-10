@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
 from threading import Thread
 
 import argparse
@@ -53,6 +52,13 @@ def stop_and_restart():
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
+def create_or_update_user(bot, user):
+    db_user = User.create_or_update_user(user.id, user.username)
+
+    if db_user and ADMIN_USER_ID:
+            bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+
+
 def start_command_handler(bot, update, args):
     message = update.message
 
@@ -67,11 +73,7 @@ def start_command_handler(bot, update, args):
     except:
         pass
 
-
-    db_user = User.create_user(user.id, user.username)
-
-    if db_user and ADMIN_USER_ID:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+    create_or_update_user(bot, user)
 
     analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
@@ -144,11 +146,7 @@ def inline_query_handler(bot, update):
     inline_query = update.inline_query
     user = inline_query.from_user
 
-    db_user = User.get_user_by_telegram_id(user.id)
-
-    if db_user:
-        db_user.updated_at = datetime.now()
-        db_user.save()
+    create_or_update_user(bot, user)
 
     query = None
 
@@ -226,11 +224,7 @@ def message_handler(bot, update):
     chat_id = message.chat.id
     user = message.from_user
 
-    db_user = User.get_user_by_telegram_id(user.id)
-
-    if db_user:
-        db_user.updated_at = datetime.now()
-        db_user.save()
+    create_or_update_user(bot, user)
 
     if len(message.entities) > 0:  # most probably the message was sent via a bot
         return
