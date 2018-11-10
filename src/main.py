@@ -67,12 +67,13 @@ def start_command_handler(bot, update, args):
     except:
         pass
 
-    analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
     db_user = User.create_user(user.id, user.username)
 
     if db_user and ADMIN_USER_ID:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+
+    analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
     if not query:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
