@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import re
 
@@ -13,6 +13,8 @@ LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
+
+EPOCH_DATE = datetime(1970, 1, 1)
 
 DEX_BASE_URL = 'https://dexonline.ro'
 
