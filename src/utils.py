@@ -152,10 +152,13 @@ def get_definitions(update, query, analytics, cli_args):
 
         for child in elements:
             for sup in child.findall('sup'):
-                sup_number = int(sup.text_content())
+                sup_text = sup.text_content()
+                superscript_text = get_superscript(sup_text)
 
-                if 0 <= sup_number <= 9:
-                    sup.text = UNICODE_SUPERSCRIPTS[sup_number]
+                if superscript_text:
+                    sup.text = superscript_text
+                else:
+                    logger.warning('Unsupported superscript in text: {}'.format(sup_text))
 
             etree.strip_tags(child, '*')
 
@@ -250,6 +253,20 @@ def clear_definitions_cache(query):
         return 'Cache successfully deleted for "{}"'.format(query)
     else:
         return 'No cache for "{}"'.format(query)
+
+
+def get_superscript(text):
+    superscript = ''
+
+    for letter in text:
+        treated_letter = letter.lower().replace('[', '(').replace(']', ')')
+
+        if not treated_letter in UNICODE_SUPERSCRIPTS:
+            return None
+
+        superscript += UNICODE_SUPERSCRIPTS[treated_letter]
+
+    return superscript
 
 
 def get_inline_keyboard_buttons(query, definitions_count, offset):

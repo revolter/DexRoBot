@@ -28,7 +28,28 @@ DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
 DANGLING_TAG_REGEX = re.compile(r'<([^/>]+)>[^<]*$')
 UNFINISHED_TAG_REGEX = re.compile(r'</?(?:\w+)?$')
 
-UNICODE_SUPERSCRIPTS = '⁰¹²³⁴⁵⁶⁷⁸⁹'
+UNICODE_SUPERSCRIPTS = {
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹',
+
+    'i': 'ⁱ',
+    'n': 'ⁿ',
+
+    '+': '⁺',
+    '-': '⁻',
+    '=': '⁼',
+
+    '(': '⁽',
+    ')': '⁾'
+}
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 MESSAGES_COUNT_LIMIT = 50
