@@ -163,8 +163,6 @@ def inline_query_handler(bot, update):
             query = inline_query.query
 
         if not query:
-            logger.warning('Empty query')
-
             analytics.track(AnalyticsType.EMPTY_QUERY, user, None)
 
             return
