@@ -60,3 +60,11 @@ PREVIOUS_PAGE_ICON = '⬅'
 PREVIOUS_OVERLAP_PAGE_ICON = '↪'
 NEXT_PAGE_ICON = '➡'
 NEXT_OVERLAP_PAGE_ICON = '↩'
+
+
+class LoggerFilter(object):
+    def __init__(self, level):
+        self.__level = level
+
+    def filter(self, log_record):
+        return log_record.levelno <= self.__level
