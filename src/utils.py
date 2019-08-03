@@ -293,6 +293,14 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
         'offset': previous_offset
     }
 
+    if offset == 0:
+        first_data = None
+    else:
+        first_data = {
+            'query': query,
+            'offset': 0
+        }
+
     if is_last_page:
         next_offset = 0
 
@@ -302,7 +310,7 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
     }
 
     previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
-    current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(None))
+    current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(first_data))
     next_button = InlineKeyboardButton(next_text, callback_data=json.dumps(next_data))
 
     paging_buttons.append(previous_button)
