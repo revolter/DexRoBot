@@ -203,7 +203,7 @@ def get_definitions(update, query, analytics, cli_args):
         text_limit = MAX_MESSAGE_LENGTH
 
         # Newlines between text and url
-        text_limit -= 1
+        text_limit -= 2
         # Definition footer
         text_limit -= len(dex_definition_footer)
         # Possible end tag
@@ -222,7 +222,7 @@ def get_definitions(update, query, analytics, cli_args):
 
             dex_definition_html = '{}...</{}>'.format(dex_definition_html, start_tag_name)
 
-        dex_definition_html = '{}\n{}'.format(dex_definition_html, dex_definition_footer)
+        dex_definition_html = '{}\n\n{}'.format(dex_definition_html, dex_definition_footer)
 
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
