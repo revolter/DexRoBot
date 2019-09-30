@@ -166,7 +166,8 @@ def get_definitions(update, query, analytics, cli_args):
             if child.tag not in ['b', 'i']:
                 child.tag = 'i'
 
-            child.attrib.clear()  # etree.strip_attributes(child, '*') should work too
+            # etree.strip_attributes(child, '*') should work too.
+            child.attrib.clear()
 
             child_string = html.tostring(child).decode()
 
@@ -183,14 +184,16 @@ def get_definitions(update, query, analytics, cli_args):
         dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
 
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dex_definition_title = dex_definition_title[:-3]  # ellipsis
+            # Ellipsis
+            dex_definition_title = dex_definition_title[:-3]
             dex_definition_title = '{}...'.format(dex_definition_title)
 
         dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
 
         dex_definition_footer = (
-            '{}\nsursa: <a href="{}">{}</a> '
+            '{}\n'
+            'sursa: <a href="{}">{}</a> '
             'adăugată de: <a href="{}">{}</a>'
         ).format(
             dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
@@ -199,10 +202,14 @@ def get_definitions(update, query, analytics, cli_args):
 
         text_limit = MAX_MESSAGE_LENGTH
 
-        text_limit -= 1  # newline between text and url
-        text_limit -= len(dex_definition_footer)  # definition footer
-        text_limit -= 4  # possible end tag
-        text_limit -= 3  # ellipsis
+        # Newlines between text and url
+        text_limit -= 1
+        # Definition footer
+        text_limit -= len(dex_definition_footer)
+        # Possible end tag
+        text_limit -= 4
+        # Ellipsis
+        text_limit -= 3
 
         dex_definition_html = dex_definition_html[:text_limit]
 
