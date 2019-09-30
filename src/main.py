@@ -45,6 +45,7 @@ from utils import (
     get_definitions, clear_definitions_cache, get_inline_keyboard_buttons
 )
 
+BOT_NAME = None
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
@@ -94,8 +95,8 @@ def start_command_handler(bot, update, args):
                 'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
                 '[dexonline.ro](http://dexonline.ro).\n'
                 'Poți scrie direct cuvântul căutat aici în chat '
-                'sau poți să scrii @DexRoBot _cuvânt_ în orice alt chat.'
-            ),
+                'sau poți să scrii @{} _cuvânt_ în orice alt chat.'
+            ).format(BOT_NAME),
             reply_markup=reply_markup,
             parse_mode=ParseMode.MARKDOWN
         )
@@ -404,6 +405,7 @@ if __name__ == '__main__':
 
         config.read('config.cfg')
 
+        BOT_NAME = config.get('Telegram', 'Name' if cli_args.server else 'TestName')
         BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
 
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
@@ -424,6 +426,8 @@ if __name__ == '__main__':
         analytics.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
+
+    analytics.userAgent = BOT_NAME
 
     requests_cache.install_cache(expire_after=RESULTS_CACHE_TIME)
 

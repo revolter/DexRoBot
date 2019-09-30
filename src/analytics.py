@@ -9,7 +9,7 @@ from telegram.ext.dispatcher import run_async
 import requests
 import requests_cache
 
-from constants import GOOGLE_HEADERS, GOOGLE_ANALYTICS_BASE_URL
+from constants import GOOGLE_ANALYTICS_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class AnalyticsType(Enum):
 class Analytics:
     def __init__(self):
         self.googleToken = None
+        self.userAgent = None
 
     def __google_track(self, analytics_type, user, data):
         if not self.googleToken:
@@ -32,7 +33,7 @@ class Analytics:
         url = GOOGLE_ANALYTICS_BASE_URL.format(self.googleToken, user.id, analytics_type.value, data)
 
         with requests_cache.disabled():
-            response = requests.get(url, headers=GOOGLE_HEADERS)
+            response = requests.get(url, headers={'User-Agent': self.userAgent or 'TelegramBot'})
 
             if response.status_code != 200:
                 logger.error('Google analytics error: {}'.format(response.status_code))
