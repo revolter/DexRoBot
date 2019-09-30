@@ -405,6 +405,8 @@ if __name__ == '__main__':
         config.read('config.cfg')
 
         BOT_TOKEN = config.get('Telegram', 'Key' if cli_args.server else 'TestKey')
+
+        ADMIN_USER_ID = config.getint('Telegram', 'Admin')
     except configparser.Error as error:
         logger.error('Config error: {}'.format(error))
 
@@ -419,8 +421,6 @@ if __name__ == '__main__':
     analytics = Analytics()
 
     try:
-        ADMIN_USER_ID = config.getint('Telegram', 'Admin')
-
         analytics.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
