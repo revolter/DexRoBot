@@ -4,7 +4,6 @@
 from threading import Thread
 
 import argparse
-import base64
 import configparser
 import json
 import logging
@@ -42,7 +41,8 @@ from constants import MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
 from database import User
 from utils import (
     check_admin, send_no_results_message,
-    get_definitions, clear_definitions_cache, get_inline_keyboard_buttons
+    get_definitions, clear_definitions_cache, get_inline_keyboard_buttons,
+    base64_encode, base64_decode
 )
 
 BOT_NAME = None
@@ -78,7 +78,7 @@ def start_command_handler(bot, update, args):
     query = ' '.join(args)
 
     try:
-        query = base64.urlsafe_b64decode(query).decode('utf-8')
+        query = base64_decode(query)
     except:
         pass
 
@@ -200,7 +200,7 @@ def inline_query_handler(bot, update):
 
     if definitions_count == 0:
         no_results_text = 'Niciun rezultat'
-        no_results_parameter = base64.urlsafe_b64encode(query.encode()).decode()
+        no_results_parameter = base64_encode(query)
     else:
         definitions = definitions[:MESSAGES_COUNT_LIMIT]
 

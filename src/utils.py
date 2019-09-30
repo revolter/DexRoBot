@@ -3,6 +3,7 @@
 from urllib.parse import quote
 from uuid import uuid4
 
+import base64
 import json
 import logging
 
@@ -318,3 +319,26 @@ def get_inline_keyboard_buttons(query, definitions_count, offset):
     paging_buttons.append(next_button)
 
     return [paging_buttons]
+
+
+def base64_encode(string):
+    """
+    Removes any `=` used as padding from the encoded string.
+    Copied from https://gist.github.com/cameronmaske/f520903ade824e4c30ab.
+    """
+
+    encoded = base64.urlsafe_b64encode(string.encode())
+
+    return encoded.decode().rstrip('=')
+
+
+def base64_decode(string):
+    """
+    Adds back in the required padding before decoding.
+    Copied from https://gist.github.com/cameronmaske/f520903ade824e4c30ab.
+    """
+
+    padding = 4 - (len(string) % 4)
+    string = string + ('=' * padding)
+
+    return base64.urlsafe_b64decode(string).decode('utf-8')
