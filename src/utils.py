@@ -22,7 +22,6 @@ from analytics import AnalyticsType
 from constants import (
     DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
-    DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
     UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON
 )
@@ -166,14 +165,14 @@ def get_definitions(update, query, analytics, cli_args):
 
         text_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
         text_limit -= len(dex_definition_footer)
-        # Possible end tag
-        text_limit -= 4
         text_limit -= len(ELLIPSIS)
 
         elements = html.fragments_fromstring(dex_definition_html_rep)
 
         dex_definition_html = ''
         dex_definition_title = ''
+
+        dex_definition_string = ''
 
         for element in elements:
             for sup in element.findall('sup'):
@@ -197,8 +196,16 @@ def get_definitions(update, query, analytics, cli_args):
 
             string = html.tostring(element).decode()
 
-            dex_definition_html += string
             dex_definition_title += text
+
+            if len(dex_definition_string) + len(text) > text_limit:
+                dex_definition_html += ELLIPSIS
+
+                break
+            else:
+                dex_definition_html += string
+
+                dex_definition_string += text
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
@@ -208,17 +215,6 @@ def get_definitions(update, query, analytics, cli_args):
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
             dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
             dex_definition_title += ELLIPSIS
-
-        dex_definition_html = dex_definition_html[:text_limit]
-
-        dex_definition_html = UNFINISHED_TAG_REGEX.sub('', dex_definition_html)
-
-        dangling_tags_groups = DANGLING_TAG_REGEX.search(dex_definition_html)
-
-        if dangling_tags_groups is not None:
-            start_tag_name = dangling_tags_groups.group(1)
-
-            dex_definition_html += '{}</{}>'.format(ELLIPSIS, start_tag_name)
 
         dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, dex_definition_footer)
 
