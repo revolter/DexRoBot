@@ -23,7 +23,7 @@ from constants import (
     DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
-    UNICODE_SUPERSCRIPTS, MESSAGE_TITLE_LENGTH_LIMIT,
+    UNICODE_SUPERSCRIPTS, ELLIPSIS, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON
 )
 
@@ -183,9 +183,8 @@ def get_definitions(update, query, analytics, cli_args):
         dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
 
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            # Ellipsis
-            dex_definition_title = dex_definition_title[:-3]
-            dex_definition_title += '...'
+            dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
+            dex_definition_title += ELLIPSIS
 
         dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
@@ -203,12 +202,10 @@ def get_definitions(update, query, analytics, cli_args):
 
         # Newlines between text and url
         text_limit -= 2
-        # Definition footer
         text_limit -= len(dex_definition_footer)
         # Possible end tag
         text_limit -= 4
-        # Ellipsis
-        text_limit -= 3
+        text_limit -= len(ELLIPSIS)
 
         dex_definition_html = dex_definition_html[:text_limit]
 
@@ -219,7 +216,7 @@ def get_definitions(update, query, analytics, cli_args):
         if dangling_tags_groups is not None:
             start_tag_name = dangling_tags_groups.group(1)
 
-            dex_definition_html += '...</{}>'.format(start_tag_name)
+            dex_definition_html += '{}</{}>'.format(ELLIPSIS, start_tag_name)
 
         dex_definition_html += '\n\n{}'.format(dex_definition_footer)
 
