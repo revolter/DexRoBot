@@ -161,11 +161,11 @@ def get_definitions(update, query, analytics, cli_args):
 
         # Definition
 
-        text_limit = MAX_MESSAGE_LENGTH
+        message_limit = MAX_MESSAGE_LENGTH
 
-        text_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
-        text_limit -= len(dex_definition_footer)
-        text_limit -= len(ELLIPSIS)
+        message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
+        message_limit -= len(dex_definition_footer)
+        message_limit -= len(ELLIPSIS)
 
         elements = html.fragments_fromstring(dex_definition_html_rep)
 
@@ -198,7 +198,7 @@ def get_definitions(update, query, analytics, cli_args):
 
             dex_definition_title += text
 
-            if len(dex_definition_string) + len(text) > text_limit:
+            if len(dex_definition_string) + len(text) > message_limit:
                 dex_definition_html += ELLIPSIS
 
                 break
