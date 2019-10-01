@@ -193,13 +193,12 @@ def get_definitions(update, query, analytics, cli_args):
             # etree.strip_attributes(element, '*') should work too.
             element.attrib.clear()
 
-            element_string = html.tostring(element).decode()
+            text = element.text_content() + (element.tail or '')
 
-            dex_definition_html += element_string
-            dex_definition_title += element.text_content()
+            string = html.tostring(element).decode()
 
-            if element.tail:
-                dex_definition_title += element.tail
+            dex_definition_html += string
+            dex_definition_title += text
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
