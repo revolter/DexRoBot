@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from cgi import escape
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -8,6 +9,7 @@ import json
 import logging
 
 from lxml import etree, html
+from lxml.html.builder import A
 
 from telegram import (
     InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle,
@@ -22,8 +24,11 @@ from analytics import AnalyticsType
 from constants import (
     DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
+    BOT_START_URL_FORMAT,
+    WORD_REGEX,
     UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
-    PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON
+    PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
+    LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT
 )
 
 logger = logging.getLogger(__name__)
@@ -78,7 +83,7 @@ def send_no_results_message(bot, chat_id, message_id, query):
     )
 
 
-def get_definitions(update, query, analytics, cli_args):
+def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
     if cli_args.fragment:
@@ -167,45 +172,87 @@ def get_definitions(update, query, analytics, cli_args):
         message_limit -= len(dex_definition_footer)
         message_limit -= len(ELLIPSIS)
 
-        elements = html.fragments_fromstring(dex_definition_html_rep)
+        fragments = html.fragments_fromstring(dex_definition_html_rep)
+        root = html.Element('root')
+
+        for fragment in fragments:
+            root.append(fragment)
 
         dex_definition_html = ''
         dex_definition_title = ''
 
-        dex_definition_string = ''
+        for sup in root.findall('sup'):
+            sup_text = sup.text_content()
+            superscript_text = get_superscript(sup_text)
 
-        for element in elements:
-            for sup in element.findall('sup'):
-                sup_text = sup.text_content()
-                superscript_text = get_superscript(sup_text)
-
-                if superscript_text:
-                    sup.text = superscript_text
-                else:
-                    logger.warning('Unsupported superscript in text: {}'.format(sup_text))
-
-            etree.strip_tags(element, '*')
-
-            if element.tag not in ['b', 'i']:
-                element.tag = 'i'
-
-            # etree.strip_attributes(element, '*') should work too.
-            element.attrib.clear()
-
-            text = element.text_content() + (element.tail or '')
-
-            string = html.tostring(element).decode()
-
-            dex_definition_title += text
-
-            if len(dex_definition_string) + len(text) > message_limit:
-                dex_definition_html += ELLIPSIS
-
-                break
+            if superscript_text:
+                sup.text = superscript_text
             else:
-                dex_definition_html += string
+                logger.warning('Unsupported superscript in text: {}'.format(sup_text))
 
-                dex_definition_string += text
+        if links_toggle:
+            etree.strip_tags(root, '*')
+
+            text = root.text
+
+            dex_definition_string = ''
+
+            for match in WORD_REGEX.finditer(text):
+                word = match.group('word')
+                other = match.group('other')
+
+                if word is not None:
+                    word = escape(word)
+
+                    link = A(word)
+
+                    link.set('href', BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
+
+                    link_text = html.tostring(link).decode()
+
+                    if len(dex_definition_string) + len(word) > message_limit:
+                        dex_definition_html += ELLIPSIS
+
+                        break
+                    else:
+                        dex_definition_html += link_text
+
+                        dex_definition_string += word
+
+                if other is not None:
+                    other = escape(other)
+
+                    dex_definition_html += other
+
+                    dex_definition_string += other
+
+            dex_definition_title = text
+        else:
+            dex_definition_string = ''
+
+            for element in root.iterchildren():
+                etree.strip_tags(element, '*')
+
+                if element.tag not in ['b', 'i']:
+                    element.tag = 'i'
+
+                # etree.strip_attributes(element, '*') should work too.
+                element.attrib.clear()
+
+                text = element.text_content() + (element.tail or '')
+
+                string = html.tostring(element).decode()
+
+                dex_definition_title += text
+
+                if len(dex_definition_string) + len(text) > message_limit:
+                    dex_definition_html += ELLIPSIS
+
+                    break
+                else:
+                    dex_definition_html += string
+
+                    dex_definition_string += text
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
@@ -221,7 +268,7 @@ def get_definitions(update, query, analytics, cli_args):
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
 
-        inline_keyboard_buttons = get_inline_keyboard_buttons(query, definitions_count, dex_definition_index)
+        inline_keyboard_buttons = get_inline_keyboard_buttons(query, definitions_count, dex_definition_index, links_toggle)
 
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
@@ -271,55 +318,76 @@ def get_superscript(text):
     return superscript
 
 
-def get_inline_keyboard_buttons(query, definitions_count, offset):
+def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
+    buttons = []
+
     paging_buttons = []
+    links_toggle_buttons = []
 
-    if definitions_count == 1:
-        return paging_buttons
+    if definitions_count > 1:
+        is_first_page = offset == 0
+        is_last_page = offset == definitions_count - 1
 
-    is_first_page = offset == 0
-    is_last_page = offset == definitions_count - 1
+        previous_offset = offset - 1
+        next_offset = offset + 1
 
-    previous_offset = offset - 1
-    next_offset = offset + 1
+        previous_text = PREVIOUS_OVERLAP_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON
+        current_text = '{} / {}'.format(offset + 1, definitions_count)
+        next_text = NEXT_OVERLAP_PAGE_ICON if is_last_page else NEXT_PAGE_ICON
 
-    previous_text = PREVIOUS_OVERLAP_PAGE_ICON if is_first_page else PREVIOUS_PAGE_ICON
-    current_text = '{} / {}'.format(offset + 1, definitions_count)
-    next_text = NEXT_OVERLAP_PAGE_ICON if is_last_page else NEXT_PAGE_ICON
+        if is_first_page:
+            previous_offset = definitions_count - 1
 
-    if is_first_page:
-        previous_offset = definitions_count - 1
-
-    previous_data = {
-        'query': query,
-        'offset': previous_offset
-    }
-
-    if offset == 0:
-        first_data = None
-    else:
-        first_data = {
+        previous_data = {
             'query': query,
-            'offset': 0
+            'offset': previous_offset,
+            'links_toggle': links_toggle
         }
 
-    if is_last_page:
-        next_offset = 0
+        if offset == 0:
+            first_data = None
+        else:
+            first_data = {
+                'query': query,
+                'offset': 0,
+                'links_toggle': links_toggle
+            }
 
-    next_data = {
+        if is_last_page:
+            next_offset = 0
+
+        next_data = {
+            'query': query,
+            'offset': next_offset,
+            'links_toggle': links_toggle
+        }
+
+        previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
+        current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(first_data))
+        next_button = InlineKeyboardButton(next_text, callback_data=json.dumps(next_data))
+
+        paging_buttons.append(previous_button)
+        paging_buttons.append(current_button)
+        paging_buttons.append(next_button)
+
+    links_toggle_data = {
         'query': query,
-        'offset': next_offset
+        'offset': offset,
+        'links_toggle': not links_toggle
     }
 
-    previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
-    current_button = InlineKeyboardButton(current_text, callback_data=json.dumps(first_data))
-    next_button = InlineKeyboardButton(next_text, callback_data=json.dumps(next_data))
+    links_toggle_text = LINKS_TOGGLE_ON_TEXT if links_toggle else LINKS_TOGGLE_OFF_TEXT
 
-    paging_buttons.append(previous_button)
-    paging_buttons.append(current_button)
-    paging_buttons.append(next_button)
+    links_toggle_button = InlineKeyboardButton(links_toggle_text, callback_data=json.dumps(links_toggle_data))
 
-    return [paging_buttons]
+    links_toggle_buttons.append(links_toggle_button)
+
+    if len(paging_buttons) > 0:
+        buttons.append(paging_buttons)
+
+    buttons.append(links_toggle_buttons)
+
+    return buttons
 
 
 def base64_encode(string):

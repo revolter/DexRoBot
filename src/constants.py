@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 
+import regex
+
 #: See also: https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
 GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=event&tid={}&cid={}&ec={}&ea={}'
 
@@ -20,6 +22,10 @@ DEX_SEARCH_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'text/{}')
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
 DEX_AUTHOR_URL = 'https://dexonline.ro/utilizator'
+
+BOT_START_URL_FORMAT = 'https://telegram.me/{}?start={}'
+
+WORD_REGEX = regex.compile(r'(?P<word>[\p{L}\p{M}\p{N}]+)|(?P<other>\P{L}+)')
 
 UNICODE_SUPERSCRIPTS = {
     '0': '⁰',
@@ -56,6 +62,10 @@ PREVIOUS_PAGE_ICON = '⬅'
 PREVIOUS_OVERLAP_PAGE_ICON = '↪'
 NEXT_PAGE_ICON = '➡'
 NEXT_OVERLAP_PAGE_ICON = '↩'
+
+_LINKS_TOOGLE_TEXT_FORMAT = '🔗: {}'
+LINKS_TOGGLE_ON_TEXT = _LINKS_TOOGLE_TEXT_FORMAT.format('off')
+LINKS_TOGGLE_OFF_TEXT = _LINKS_TOOGLE_TEXT_FORMAT.format('on')
 
 
 class LoggerFilter(object):

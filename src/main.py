@@ -86,7 +86,34 @@ def start_command_handler(bot, update, args):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
-    if not query:
+    if query is not None:
+        bot.send_chat_action(chat_id, ChatAction.TYPING)
+
+        analytics.track(AnalyticsType.MESSAGE, user, query)
+
+        links_toggle = False
+
+        (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+
+        if len(definitions) == 0:
+            send_no_results_message(bot, chat_id, message_id, query)
+        else:
+            inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+
+            reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+
+            definition = definitions[offset]
+            definition_content = definition.input_message_content
+            definition_text = definition_content.message_text
+
+            bot.send_message(
+                chat_id, definition_text,
+                reply_markup=reply_markup,
+                parse_mode=definition_content.parse_mode,
+                disable_web_page_preview=True,
+                reply_to_message_id=message_id
+            )
+    else:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
         reply_markup = InlineKeyboardMarkup([[reply_button]])
 
@@ -102,8 +129,6 @@ def start_command_handler(bot, update, args):
         )
 
         return
-
-    send_no_results_message(bot, chat_id, message_id, query)
 
 
 def restart_command_handler(bot, update):
@@ -191,7 +216,9 @@ def inline_query_handler(bot, update):
 
         logger.info('{} {}'.format(user_identification, query))
 
-    (definitions, offset) = get_definitions(update, query, analytics, cli_args)
+    links_toggle = False
+
+    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     definitions_count = len(definitions)
 
@@ -233,19 +260,22 @@ def message_handler(bot, update):
 
     create_or_update_user(bot, user)
 
-    if len(message.entities) > 0:  # most probably the message was sent via a bot
+    # Most probably the message was sent via a bot.
+    if len(message.entities) > 0:
         return
 
     bot.send_chat_action(chat_id, ChatAction.TYPING)
 
     analytics.track(AnalyticsType.MESSAGE, user, query)
 
-    (definitions, offset) = get_definitions(update, query, analytics, cli_args)
+    links_toggle = False
+
+    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
         send_no_results_message(bot, chat_id, message_id, query)
     else:
-        inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+        inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
@@ -283,10 +313,11 @@ def message_answer_handler(bot, update):
 
     query = callback_data['query']
     offset = callback_data['offset']
+    links_toggle = callback_data['links_toggle']
 
-    (definitions, _) = get_definitions(update, query, analytics, cli_args)
+    (definitions, _) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
-    inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset)
+    inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
     reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
