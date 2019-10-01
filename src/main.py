@@ -182,12 +182,12 @@ def inline_query_handler(bot, update):
             user_name = user.last_name
 
         if user_name:
-            user_identification = '{}: {}'.format(user_identification, user_name)
+            user_identification += ': {}'.format(user_name)
 
         if user.username:
-            user_identification = '{} (@{})'.format(user_identification, user.username)
+            user_identification += ' (@{})'.format(user.username)
 
-        user_identification = '{}:'.format(user_identification)
+        user_identification += ':'
 
         logger.info('{} {}'.format(user_identification, query))
 

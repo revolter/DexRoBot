@@ -171,12 +171,11 @@ def get_definitions(update, query, analytics, cli_args):
 
             child_string = html.tostring(child).decode()
 
-            dex_definition_html = '{}{}'.format(dex_definition_html, child_string)
-
-            dex_definition_title = '{}{}'.format(dex_definition_title, child.text_content())
+            dex_definition_html += child_string
+            dex_definition_title += child.text_content()
 
             if child.tail:
-                dex_definition_title = '{}{}'.format(dex_definition_title, child.tail)
+                dex_definition_title += child.tail
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
@@ -186,7 +185,7 @@ def get_definitions(update, query, analytics, cli_args):
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
             # Ellipsis
             dex_definition_title = dex_definition_title[:-3]
-            dex_definition_title = '{}...'.format(dex_definition_title)
+            dex_definition_title += '...'
 
         dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
@@ -220,9 +219,9 @@ def get_definitions(update, query, analytics, cli_args):
         if dangling_tags_groups is not None:
             start_tag_name = dangling_tags_groups.group(1)
 
-            dex_definition_html = '{}...</{}>'.format(dex_definition_html, start_tag_name)
+            dex_definition_html += '...</{}>'.format(start_tag_name)
 
-        dex_definition_html = '{}\n\n{}'.format(dex_definition_html, dex_definition_footer)
+        dex_definition_html += '\n\n{}'.format(dex_definition_footer)
 
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
