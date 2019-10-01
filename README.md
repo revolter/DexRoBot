@@ -38,6 +38,14 @@ cd src
 cp config_sample.cfg config.cfg
 ```
 
+On Linux, you might need to install the development package of Python by running:
+
+```sh
+sudo apt install python3-dev
+```
+
+before trying to install the dependencies using `pipenv`.
+
 Then, edit the file named `config.cfg` inside the `src` folder with the correct values and run it using `./main.py -d`.
 
 Use `exit` to close the virtual environment.
