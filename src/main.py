@@ -29,6 +29,7 @@ warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
 logging.getLogger().addHandler(warning_logging_handler)
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode
+from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
     CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler,
     Filters, Updater
@@ -37,7 +38,7 @@ from telegram.ext import (
 import requests_cache
 
 from analytics import Analytics, AnalyticsType
-from constants import MESSAGES_COUNT_LIMIT, RESULTS_CACHE_TIME
+from constants import RESULTS_CACHE_TIME
 from database import User
 from utils import (
     check_admin, send_no_results_message,
@@ -229,7 +230,7 @@ def inline_query_handler(bot, update):
         no_results_text = 'Niciun rezultat'
         no_results_parameter = base64_encode(query)
     else:
-        definitions = definitions[:MESSAGES_COUNT_LIMIT]
+        definitions = definitions[:MAX_INLINE_QUERY_RESULTS]
 
     cache_time = int(RESULTS_CACHE_TIME.total_seconds())
 
@@ -239,7 +240,7 @@ def inline_query_handler(bot, update):
     next_offset = None
 
     if definitions_count > len(definitions):
-        next_offset = offset + MESSAGES_COUNT_LIMIT
+        next_offset = offset + MAX_INLINE_QUERY_RESULTS
 
     inline_query.answer(
         definitions,
