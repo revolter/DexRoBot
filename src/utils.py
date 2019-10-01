@@ -146,6 +146,30 @@ def get_definitions(update, query, analytics, cli_args):
         dex_definition_author = dex_raw_definition['userNick']
         dex_definition_html_rep = dex_raw_definition['htmlRep']
 
+        # Footer
+
+        dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
+        dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
+
+        dex_definition_footer = (
+            '{}\n'
+            'sursa: <a href="{}">{}</a> '
+            'adăugată de: <a href="{}">{}</a>'
+        ).format(
+            dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
+            dex_author_url, dex_definition_author
+        )
+
+        # Definition
+
+        text_limit = MAX_MESSAGE_LENGTH
+
+        text_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
+        text_limit -= len(dex_definition_footer)
+        # Possible end tag
+        text_limit -= 4
+        text_limit -= len(ELLIPSIS)
+
         elements = html.fragments_fromstring(dex_definition_html_rep)
 
         dex_definition_html = ''
@@ -185,26 +209,6 @@ def get_definitions(update, query, analytics, cli_args):
         if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
             dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
             dex_definition_title += ELLIPSIS
-
-        dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
-        dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
-
-        dex_definition_footer = (
-            '{}\n'
-            'sursa: <a href="{}">{}</a> '
-            'adăugată de: <a href="{}">{}</a>'
-        ).format(
-            dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
-            dex_author_url, dex_definition_author
-        )
-
-        text_limit = MAX_MESSAGE_LENGTH
-
-        text_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
-        text_limit -= len(dex_definition_footer)
-        # Possible end tag
-        text_limit -= 4
-        text_limit -= len(ELLIPSIS)
 
         dex_definition_html = dex_definition_html[:text_limit]
 
