@@ -151,8 +151,8 @@ def get_definitions(update, query, analytics, cli_args):
         dex_definition_html = ''
         dex_definition_title = ''
 
-        for child in elements:
-            for sup in child.findall('sup'):
+        for element in elements:
+            for sup in element.findall('sup'):
                 sup_text = sup.text_content()
                 superscript_text = get_superscript(sup_text)
 
@@ -161,21 +161,21 @@ def get_definitions(update, query, analytics, cli_args):
                 else:
                     logger.warning('Unsupported superscript in text: {}'.format(sup_text))
 
-            etree.strip_tags(child, '*')
+            etree.strip_tags(element, '*')
 
-            if child.tag not in ['b', 'i']:
-                child.tag = 'i'
+            if element.tag not in ['b', 'i']:
+                element.tag = 'i'
 
-            # etree.strip_attributes(child, '*') should work too.
-            child.attrib.clear()
+            # etree.strip_attributes(element, '*') should work too.
+            element.attrib.clear()
 
-            child_string = html.tostring(child).decode()
+            element_string = html.tostring(element).decode()
 
-            dex_definition_html += child_string
-            dex_definition_title += child.text_content()
+            dex_definition_html += element_string
+            dex_definition_title += element.text_content()
 
-            if child.tail:
-                dex_definition_title += child.tail
+            if element.tail:
+                dex_definition_title += element.tail
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
