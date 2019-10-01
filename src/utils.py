@@ -22,7 +22,7 @@ import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
+    DEX_API_JSON_PATH, DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     BOT_START_URL_FORMAT,
     WORD_REGEX,
@@ -101,14 +101,14 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
         dex_api_final_url = dex_api_request.url
 
-        if not dex_api_final_url.endswith('/json'):
-            dex_api_request = requests.get('{}/json'.format(dex_api_final_url))
+        if not dex_api_final_url.endswith(DEX_API_JSON_PATH):
+            dex_api_request = requests.get('{}{}'.format(dex_api_final_url, DEX_API_JSON_PATH))
 
         dex_raw_response = dex_api_request.json()
 
         dex_raw_definitions = dex_raw_response['definitions']
 
-        dex_url = dex_api_url[:-5]  # /json
+        dex_url = dex_api_url[:- len(DEX_API_JSON_PATH)]
 
     definitions_count = len(dex_raw_definitions)
 
