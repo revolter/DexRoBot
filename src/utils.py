@@ -23,7 +23,7 @@ from constants import (
     DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     DANGLING_TAG_REGEX, UNFINISHED_TAG_REGEX,
-    UNICODE_SUPERSCRIPTS, ELLIPSIS, MESSAGE_TITLE_LENGTH_LIMIT,
+    UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON
 )
 
@@ -200,8 +200,7 @@ def get_definitions(update, query, analytics, cli_args):
 
         text_limit = MAX_MESSAGE_LENGTH
 
-        # Newlines between text and url
-        text_limit -= 2
+        text_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
         text_limit -= len(dex_definition_footer)
         # Possible end tag
         text_limit -= 4
@@ -218,7 +217,7 @@ def get_definitions(update, query, analytics, cli_args):
 
             dex_definition_html += '{}</{}>'.format(ELLIPSIS, start_tag_name)
 
-        dex_definition_html += '\n\n{}'.format(dex_definition_footer)
+        dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, dex_definition_footer)
 
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
