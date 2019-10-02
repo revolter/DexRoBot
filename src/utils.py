@@ -28,7 +28,8 @@ from constants import (
     WORD_REGEX,
     UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
-    LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT
+    LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT,
+    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY
 )
 
 logger = logging.getLogger(__name__)
@@ -339,27 +340,27 @@ def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
             previous_offset = definitions_count - 1
 
         previous_data = {
-            'query': query,
-            'offset': previous_offset,
-            'links_toggle': links_toggle
+            BUTTON_DATA_QUERY_KEY: query,
+            BUTTON_DATA_OFFSET_KEY: previous_offset,
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle
         }
 
         if offset == 0:
             first_data = None
         else:
             first_data = {
-                'query': query,
-                'offset': 0,
-                'links_toggle': links_toggle
+                BUTTON_DATA_QUERY_KEY: query,
+                BUTTON_DATA_OFFSET_KEY: 0,
+                BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle
             }
 
         if is_last_page:
             next_offset = 0
 
         next_data = {
-            'query': query,
-            'offset': next_offset,
-            'links_toggle': links_toggle
+            BUTTON_DATA_QUERY_KEY: query,
+            BUTTON_DATA_OFFSET_KEY: next_offset,
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle
         }
 
         previous_button = InlineKeyboardButton(previous_text, callback_data=json.dumps(previous_data))
@@ -371,9 +372,9 @@ def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
         paging_buttons.append(next_button)
 
     links_toggle_data = {
-        'query': query,
-        'offset': offset,
-        'links_toggle': not links_toggle
+        BUTTON_DATA_QUERY_KEY: query,
+        BUTTON_DATA_OFFSET_KEY: offset,
+        BUTTON_DATA_LINKS_TOGGLE_KEY: not links_toggle
     }
 
     links_toggle_text = LINKS_TOGGLE_ON_TEXT if links_toggle else LINKS_TOGGLE_OFF_TEXT

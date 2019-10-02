@@ -67,6 +67,10 @@ _LINKS_TOOGLE_TEXT_FORMAT = '🔗: {}'
 LINKS_TOGGLE_ON_TEXT = _LINKS_TOOGLE_TEXT_FORMAT.format('off')
 LINKS_TOGGLE_OFF_TEXT = _LINKS_TOOGLE_TEXT_FORMAT.format('on')
 
+BUTTON_DATA_QUERY_KEY = 'q'
+BUTTON_DATA_OFFSET_KEY = 'o'
+BUTTON_DATA_LINKS_TOGGLE_KEY = 'l'
+
 
 class LoggerFilter(object):
     def __init__(self, level):

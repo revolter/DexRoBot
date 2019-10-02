@@ -38,7 +38,10 @@ from telegram.ext import (
 import requests_cache
 
 from analytics import Analytics, AnalyticsType
-from constants import RESULTS_CACHE_TIME
+from constants import (
+    RESULTS_CACHE_TIME,
+    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY
+)
 from database import User
 from utils import (
     check_admin, send_no_results_message,
@@ -312,9 +315,9 @@ def message_answer_handler(bot, update):
         chat_id = callback_message.chat_id
         message_id = callback_message.message_id
 
-    query = callback_data['query']
-    offset = callback_data['offset']
-    links_toggle = callback_data['links_toggle']
+    query = callback_data[BUTTON_DATA_QUERY_KEY]
+    offset = callback_data[BUTTON_DATA_OFFSET_KEY]
+    links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
 
     (definitions, _) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
