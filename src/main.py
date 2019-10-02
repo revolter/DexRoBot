@@ -87,7 +87,7 @@ def start_command_handler(bot, update, args):
 
     analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
-    if query is not None:
+    if query:
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
         analytics.track(AnalyticsType.MESSAGE, user, query)
