@@ -349,7 +349,7 @@ def message_answer_handler(bot, update):
 
 
 def error_handler(bot, update, error):
-    logger.error('Update "{}" caused error "{}"'.format(update, error))
+    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), error))
 
 
 def main():
