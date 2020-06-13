@@ -330,7 +330,7 @@ def message_answer_handler(bot, update):
     definition_text = definition_content.message_text
 
     if is_inline:
-        bot.editMessageText(
+        bot.edit_message_text(
             definition_text,
             inline_message_id=message_id,
             reply_markup=reply_markup,
@@ -338,7 +338,7 @@ def message_answer_handler(bot, update):
             disable_web_page_preview=True
         )
     else:
-        bot.editMessageText(
+        bot.edit_message_text(
             definition_text,
             chat_id=chat_id,
             message_id=message_id,
@@ -388,7 +388,7 @@ def main():
                 if cli_args.set_webhook:
                     logger.info('Updated webhook')
                 else:
-                    updater.bot.setWebhook = (lambda *args, **kwargs: None)
+                    updater.bot.set_webhook = (lambda *args, **kwargs: None)
 
                 updater.start_webhook(
                     listen='0.0.0.0',
