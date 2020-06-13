@@ -189,7 +189,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             if superscript_text:
                 sup.text = superscript_text
             else:
-                logger.warning('Unsupported superscript in text: {}'.format(sup_text))
+                logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, dex_definition_url))
 
         if links_toggle:
             etree.strip_tags(root, '*')
