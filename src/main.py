@@ -28,10 +28,11 @@ warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
 
 logging.getLogger().addHandler(warning_logging_handler)
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode, Update
 from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
-    CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler,
+    CallbackContext, CallbackQueryHandler,
+    CommandHandler, InlineQueryHandler, MessageHandler,
     Filters, Updater
 )
 
@@ -72,14 +73,15 @@ def create_or_update_user(bot, user):
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
 
-def start_command_handler(bot, update, args):
+def start_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
 
     message_id = message.message_id
     chat_id = message.chat_id
     user = message.from_user
 
-    query = ' '.join(args)
+    query = ' '.join(context.args)
 
     try:
         query = base64_decode(query)
@@ -135,8 +137,9 @@ def start_command_handler(bot, update, args):
         return
 
 
-def restart_command_handler(bot, update):
+def restart_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
@@ -146,8 +149,10 @@ def restart_command_handler(bot, update):
     Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(bot, update):
+def logs_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
+
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
@@ -159,29 +164,35 @@ def logs_command_handler(bot, update):
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(bot, update, args):
+def users_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
+
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table('updated' in args), parse_mode=ParseMode.MARKDOWN)
+    bot.send_message(chat_id, User.get_users_table('updated' in context.args), parse_mode=ParseMode.MARKDOWN)
 
 
-def clear_command_handler(bot, update, args):
+def clear_command_handler(update: Update, context: CallbackContext):
     message = update.message
+    bot = context.bot
+
     chat_id = message.chat_id
 
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    for query in args:
+    for query in context.args:
         bot.send_message(chat_id, clear_definitions_cache(query))
 
 
-def inline_query_handler(bot, update):
+def inline_query_handler(update: Update, context: CallbackContext):
     inline_query = update.inline_query
+    bot = context.bot
+
     user = inline_query.from_user
 
     create_or_update_user(bot, user)
@@ -254,8 +265,9 @@ def inline_query_handler(bot, update):
     )
 
 
-def message_handler(bot, update):
-    message = update.message
+def message_handler(update: Update, context: CallbackContext):
+    message = update.effective_message
+    bot = context.bot
 
     message_id = message.message_id
     query = message.text
@@ -296,8 +308,10 @@ def message_handler(bot, update):
         )
 
 
-def message_answer_handler(bot, update):
+def message_answer_handler(update: Update, context: CallbackContext):
     callback_query = update.callback_query
+    bot = context.bot
+
     callback_data = json.loads(callback_query.data)
 
     if not callback_data:
@@ -348,8 +362,8 @@ def message_answer_handler(bot, update):
         )
 
 
-def error_handler(bot, update, error):
-    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), error))
+def error_handler(update: Update, context: CallbackContext):
+    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
 def main():
@@ -454,7 +468,7 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = Updater(BOT_TOKEN)
+    updater = Updater(BOT_TOKEN, use_context=True)
     analytics = Analytics()
 
     try:
@@ -484,6 +498,6 @@ if __name__ == '__main__':
         dummy_update.inline_query.from_user.last_name = None
         dummy_update.inline_query.from_user.username = None
 
-        inline_query_handler(None, dummy_update)
+        inline_query_handler(dummy_update, None)
     else:
         main()
