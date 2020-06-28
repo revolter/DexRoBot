@@ -29,7 +29,8 @@ from constants import (
     UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
     LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT,
-    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY
+    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
+    BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 def check_admin(bot, message, analytics, admin_user_id):
     analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
-    if not admin_user_id or message.from_user.id != admin_user_id:
+    if admin_user_id is None or message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
@@ -269,7 +270,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
 
-        inline_keyboard_buttons = get_inline_keyboard_buttons(query, definitions_count, dex_definition_index, links_toggle)
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, dex_definition_index, links_toggle)
 
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
@@ -319,7 +320,7 @@ def get_superscript(text):
     return superscript
 
 
-def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
+def get_definition_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
     buttons = []
 
     paging_buttons = []
@@ -389,6 +390,28 @@ def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
     buttons.append(links_toggle_buttons)
 
     return buttons
+
+
+def get_subscription_inline_keyboard_buttons():
+    no_data = {
+        BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY: False
+    }
+
+    no_button = InlineKeyboardButton(
+        text='Nu',
+        callback_data=json.dumps(no_data)
+    )
+
+    yes_data = {
+        BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY: True
+    }
+
+    yes_button = InlineKeyboardButton(
+        text='Da',
+        callback_data=json.dumps(yes_data)
+    )
+
+    return [[no_button, yes_button]]
 
 
 def base64_encode(string):

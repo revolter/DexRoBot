@@ -71,6 +71,8 @@ BUTTON_DATA_QUERY_KEY = 'q'
 BUTTON_DATA_OFFSET_KEY = 'o'
 BUTTON_DATA_LINKS_TOGGLE_KEY = 'l'
 
+BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY = 'a'
+
 
 class LoggerFilter(object):
     def __init__(self, level):
