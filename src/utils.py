@@ -30,8 +30,9 @@ from constants import (
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
     LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT,
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
-    BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY
+    BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
+from database import User
 
 logger = logging.getLogger(__name__)
 
@@ -394,7 +395,7 @@ def get_definition_inline_keyboard_buttons(query, definitions_count, offset, lin
 
 def get_subscription_inline_keyboard_buttons():
     no_data = {
-        BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY: False
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.denied.value
     }
 
     no_button = InlineKeyboardButton(
@@ -403,7 +404,7 @@ def get_subscription_inline_keyboard_buttons():
     )
 
     yes_data = {
-        BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY: True
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.accepted.value
     }
 
     yes_button = InlineKeyboardButton(

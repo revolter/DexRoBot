@@ -42,7 +42,7 @@ from analytics import Analytics, AnalyticsType
 from constants import (
     RESULTS_CACHE_TIME,
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
-    BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY
+    BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
 from database import User
 from utils import (
@@ -343,14 +343,14 @@ def message_answer_handler(update: Update, context: CallbackContext):
         chat_id = callback_message.chat_id
         message_id = callback_message.message_id
 
-    if BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY in callback_data:
-        answer: bool = callback_data[BUTTON_DATA_SUBSCRIPTION_ANSWER_KEY]
+    if BUTTON_DATA_SUBSCRIPTION_STATE_KEY in callback_data:
+        state: int = callback_data[BUTTON_DATA_SUBSCRIPTION_STATE_KEY]
         user_id = update.effective_user.id
 
         db_user: User = User.get_or_none(User.telegram_id == user_id)
 
         if db_user is not None:
-            subscription = User.Subscription.accepted if answer else User.Subscription.denied
+            subscription = User.Subscription(state)
 
             db_user.subscription = subscription.value
             db_user.save()
