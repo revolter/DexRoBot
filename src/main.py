@@ -5,6 +5,7 @@ from threading import Thread
 
 import argparse
 import configparser
+import datetime
 import json
 import logging
 import os
@@ -48,7 +49,8 @@ from database import User
 from utils import (
     check_admin, send_no_results_message,
     get_definitions, clear_definitions_cache,
-    get_definition_inline_keyboard_buttons, get_subscription_inline_keyboard_buttons,
+    get_definition_inline_keyboard_buttons,
+    get_subscription_onboarding_inline_keyboard_buttons, get_subscription_cancel_inline_keyboard_button,
     base64_encode, base64_decode
 )
 
@@ -312,7 +314,7 @@ def message_handler(update: Update, context: CallbackContext):
     db_user = User.get_or_none(User.telegram_id == user.id)
 
     if db_user is not None and db_user.subscription == User.Subscription.undetermined.value:
-        reply_markup = InlineKeyboardMarkup(get_subscription_inline_keyboard_buttons())
+        reply_markup = InlineKeyboardMarkup(get_subscription_onboarding_inline_keyboard_buttons())
 
         bot.send_message(
             chat_id=chat_id,
@@ -355,10 +357,13 @@ def message_answer_handler(update: Update, context: CallbackContext):
             db_user.subscription = subscription.value
             db_user.save()
 
-            bot.delete_message(
-                chat_id=chat_id,
-                message_id=message_id
-            )
+            if subscription == User.Subscription.revoked:
+                callback_query.edit_message_reply_markup(None)
+            else:
+                bot.delete_message(
+                    chat_id=chat_id,
+                    message_id=message_id
+                )
     else:
         query = callback_data[BUTTON_DATA_QUERY_KEY]
         offset = callback_data[BUTTON_DATA_OFFSET_KEY]
@@ -391,6 +396,19 @@ def message_answer_handler(update: Update, context: CallbackContext):
                 parse_mode=definition_content.parse_mode,
                 disable_web_page_preview=True
             )
+
+
+def word_of_the_day_job_handler(context: CallbackContext):
+    bot = context.bot
+
+    reply_markup = InlineKeyboardMarkup(get_subscription_cancel_inline_keyboard_button())
+
+    bot.send_message(
+        chat_id=56742306,
+        text='Cuvântul zilei:',
+        reply_markup=reply_markup,
+        disable_notification=True
+    )
 
 
 def error_handler(update: Update, context: CallbackContext):
@@ -500,6 +518,7 @@ if __name__ == '__main__':
         sys.exit(2)
 
     updater = Updater(BOT_TOKEN, use_context=True)
+    job_queue = updater.job_queue
     analytics = Analytics()
 
     try:
@@ -531,4 +550,18 @@ if __name__ == '__main__':
 
         inline_query_handler(dummy_update, None)
     else:
+        offset = datetime.timedelta(hours=2)
+        timezone = datetime.timezone(offset)
+        time = datetime.time(
+            hour=12,
+            minute=0,
+            second=0,
+            tzinfo=timezone
+        )
+
+        job_queue.run_daily(
+            callback=word_of_the_day_job_handler,
+            time=time
+        )
+
         main()

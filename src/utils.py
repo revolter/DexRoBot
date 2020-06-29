@@ -393,7 +393,7 @@ def get_definition_inline_keyboard_buttons(query, definitions_count, offset, lin
     return buttons
 
 
-def get_subscription_inline_keyboard_buttons():
+def get_subscription_onboarding_inline_keyboard_buttons():
     no_data = {
         BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.denied.value
     }
@@ -413,6 +413,19 @@ def get_subscription_inline_keyboard_buttons():
     )
 
     return [[no_button, yes_button]]
+
+
+def get_subscription_cancel_inline_keyboard_button():
+    data = {
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.revoked.value
+    }
+
+    button = InlineKeyboardButton(
+        text='Oprește',
+        callback_data=json.dumps(data)
+    )
+
+    return [[button]]
 
 
 def base64_encode(string):
