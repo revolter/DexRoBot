@@ -468,7 +468,7 @@ def main():
         else:
             logger.info('Started polling')
 
-            updater.start_polling()
+            updater.start_polling(timeout=0.01)
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
