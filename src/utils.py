@@ -22,7 +22,7 @@ import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_JSON_PATH, DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
+    DEX_API_JSON_PATH, DEX_DEFINITION_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     BOT_START_URL_FORMAT,
     WORD_REGEX,
@@ -99,7 +99,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             'userNick': None
         }]
     else:
-        dex_api_url = DEX_API_URL_FORMAT.format(query)
+        dex_api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
         dex_api_request = requests.get(dex_api_url)
 
         dex_api_final_url = dex_api_request.url
@@ -295,7 +295,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
 
 def clear_definitions_cache(query):
-    dex_api_url = DEX_API_URL_FORMAT.format(query)
+    dex_api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
 
     cache = requests_cache.core.get_cache()
 
