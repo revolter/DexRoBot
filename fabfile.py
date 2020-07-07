@@ -32,6 +32,9 @@ env.source_filenames = [
     'analytics.py',
     'constants.py',
 
+    'queue_bot.py',
+    'queue_updater.py',
+
     'config.cfg'
 ]
 env.meta_filenames = [

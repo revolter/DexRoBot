@@ -34,8 +34,9 @@ from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
     CallbackContext, CallbackQueryHandler,
     CommandHandler, InlineQueryHandler, MessageHandler,
-    Filters, Updater
+    Filters
 )
+from telegram.utils.request import Request
 
 import requests_cache
 
@@ -46,6 +47,8 @@ from constants import (
     BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
 from database import User
+from queue_bot import QueueBot
+from queue_updater import QueueUpdater
 from utils import (
     check_admin, send_no_results_message,
     get_definitions, clear_definitions_cache,
@@ -61,7 +64,7 @@ ADMIN_USER_ID = None
 
 logger = logging.getLogger(__name__)
 
-updater = None
+updater: QueueUpdater = None
 analytics = None
 
 
@@ -399,16 +402,17 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
 
 def word_of_the_day_job_handler(context: CallbackContext):
-    bot = context.bot
+    bot: QueueBot = context.bot
 
     reply_markup = InlineKeyboardMarkup(get_subscription_cancel_inline_keyboard_button())
 
-    bot.send_message(
-        chat_id=56742306,
-        text='Cuvântul zilei:',
-        reply_markup=reply_markup,
-        disable_notification=True
-    )
+    for user in User.select().where(User.subscription == User.Subscription.accepted.value):
+        bot.queue_message(
+            chat_id=user.telegram_id,
+            text='Cuvântul zilei:',
+            reply_markup=reply_markup,
+            disable_notification=True
+        )
 
 
 def error_handler(update: Update, context: CallbackContext):
@@ -517,7 +521,15 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = Updater(BOT_TOKEN, use_context=True)
+    request = Request(con_pool_size=8)
+    queue_bot = QueueBot(
+        token=BOT_TOKEN,
+        request=request
+    )
+    updater = QueueUpdater(
+        bot=queue_bot,
+        use_context=True
+    )
     job_queue = updater.job_queue
     analytics = Analytics()
 
