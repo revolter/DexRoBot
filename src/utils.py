@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from cgi import escape
+from html import escape
 from urllib.parse import quote
 from uuid import uuid4
 
