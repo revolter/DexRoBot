@@ -96,11 +96,18 @@ def get_raw_response(api_url):
     return api_request.json()
 
 
+def create_definition_url(raw_definition, url):
+    id = raw_definition['id']
+    url_escaped = url.replace(' ', '')
+
+    return '{}/{}'.format(url_escaped, id)
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
     if cli_args.fragment:
-        dex_url = 'debug'
+        url = 'debug'
 
         dex_raw_definitions = [{
             'id': 0,
@@ -114,7 +121,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
         dex_raw_definitions = raw_response['definitions']
 
-        dex_url = api_url[:- len(DEX_API_JSON_PATH)]
+        url = api_url[:- len(DEX_API_JSON_PATH)]
 
     definitions_count = len(dex_raw_definitions)
 
@@ -151,14 +158,17 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
 
-        dex_definition_id = dex_raw_definition['id']
         dex_definition_source_name = dex_raw_definition['sourceName']
         dex_definition_author = dex_raw_definition['userNick']
         dex_definition_html_rep = dex_raw_definition['htmlRep']
 
+        definition_url = create_definition_url(
+            raw_definition=dex_raw_definition,
+            url=url
+        )
+
         # Footer
 
-        dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
         dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
 
         dex_definition_footer = (
@@ -166,7 +176,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             'sursa: <a href="{}">{}</a> '
             'adăugată de: <a href="{}">{}</a>'
         ).format(
-            dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
+            definition_url, DEX_SOURCES_URL, dex_definition_source_name,
             dex_author_url, dex_definition_author
         )
 
@@ -194,7 +204,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             if superscript_text:
                 sup.text = superscript_text
             else:
-                logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, dex_definition_url))
+                logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
 
         if links_toggle:
             etree.strip_tags(root, '*')
@@ -282,7 +292,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             id=uuid4(),
             title=dex_definition_title,
             thumb_url=DEX_THUMBNAIL_URL,
-            url=dex_definition_url,
+            url=definition_url,
             hide_url=True,
             reply_markup=reply_markup,
             input_message_content=InputTextMessageContent(
