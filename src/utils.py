@@ -332,7 +332,7 @@ def get_superscript(text):
     for letter in text:
         treated_letter = letter.lower().replace('[', '(').replace(']', ')')
 
-        if not treated_letter in UNICODE_SUPERSCRIPTS:
+        if treated_letter not in UNICODE_SUPERSCRIPTS:
             return None
 
         superscript += UNICODE_SUPERSCRIPTS[treated_letter]
