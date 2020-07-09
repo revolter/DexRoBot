@@ -86,6 +86,16 @@ def send_no_results_message(bot, chat_id, message_id, query):
     )
 
 
+def get_raw_response(api_url):
+    api_request = requests.get(api_url)
+    api_final_url = api_request.url
+
+    if not api_final_url.endswith(DEX_API_JSON_PATH):
+        api_request = requests.get('{}{}'.format(api_final_url, DEX_API_JSON_PATH))
+
+    return api_request.json()
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -99,19 +109,12 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             'userNick': None
         }]
     else:
-        dex_api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
-        dex_api_request = requests.get(dex_api_url)
+        api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
+        raw_response = get_raw_response(api_url)
 
-        dex_api_final_url = dex_api_request.url
+        dex_raw_definitions = raw_response['definitions']
 
-        if not dex_api_final_url.endswith(DEX_API_JSON_PATH):
-            dex_api_request = requests.get('{}{}'.format(dex_api_final_url, DEX_API_JSON_PATH))
-
-        dex_raw_response = dex_api_request.json()
-
-        dex_raw_definitions = dex_raw_response['definitions']
-
-        dex_url = dex_api_url[:- len(DEX_API_JSON_PATH)]
+        dex_url = api_url[:- len(DEX_API_JSON_PATH)]
 
     definitions_count = len(dex_raw_definitions)
 
