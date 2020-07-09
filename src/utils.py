@@ -103,6 +103,22 @@ def create_definition_url(raw_definition, url):
     return '{}/{}'.format(url_escaped, id)
 
 
+def create_footer(raw_definition, definition_url):
+    source_name = raw_definition['sourceName']
+    author = raw_definition['userNick']
+
+    author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(author))
+
+    return (
+        '{}\n'
+        'sursa: <a href="{}">{}</a> '
+        'adăugată de: <a href="{}">{}</a>'
+    ).format(
+        definition_url, DEX_SOURCES_URL, source_name,
+        author_url, author
+    )
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -158,8 +174,6 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
 
-        dex_definition_source_name = dex_raw_definition['sourceName']
-        dex_definition_author = dex_raw_definition['userNick']
         dex_definition_html_rep = dex_raw_definition['htmlRep']
 
         definition_url = create_definition_url(
@@ -167,17 +181,9 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             url=url
         )
 
-        # Footer
-
-        dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
-
-        dex_definition_footer = (
-            '{}\n'
-            'sursa: <a href="{}">{}</a> '
-            'adăugată de: <a href="{}">{}</a>'
-        ).format(
-            definition_url, DEX_SOURCES_URL, dex_definition_source_name,
-            dex_author_url, dex_definition_author
+        footer = create_footer(
+            raw_definition=dex_raw_definition,
+            definition_url=definition_url
         )
 
         # Definition
@@ -185,7 +191,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         message_limit = MAX_MESSAGE_LENGTH
 
         message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
-        message_limit -= len(dex_definition_footer)
+        message_limit -= len(footer)
         message_limit -= len(ELLIPSIS)
 
         fragments = html.fragments_fromstring(dex_definition_html_rep)
@@ -279,7 +285,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
             dex_definition_title += ELLIPSIS
 
-        dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, dex_definition_footer)
+        dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
 
         if cli_args.debug:
             logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
