@@ -119,6 +119,16 @@ def create_footer(raw_definition, definition_url):
     )
 
 
+def get_message_limit(footer):
+    message_limit = MAX_MESSAGE_LENGTH
+
+    message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
+    message_limit -= len(footer)
+    message_limit -= len(ELLIPSIS)
+
+    return message_limit
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -188,11 +198,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
         # Definition
 
-        message_limit = MAX_MESSAGE_LENGTH
-
-        message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
-        message_limit -= len(footer)
-        message_limit -= len(ELLIPSIS)
+        message_limit = get_message_limit(footer)
 
         fragments = html.fragments_fromstring(dex_definition_html_rep)
         root = html.Element('root')
