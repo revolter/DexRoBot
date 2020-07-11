@@ -129,6 +129,17 @@ def get_message_limit(footer):
     return message_limit
 
 
+def get_html(raw_definition):
+    html_rep = raw_definition['htmlRep']
+    fragments = html.fragments_fromstring(html_rep)
+    root = html.Element('root')
+
+    for fragment in fragments:
+        root.append(fragment)
+
+    return root
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -151,7 +162,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
     definitions_count = len(dex_raw_definitions)
 
-    # set the index of the definitions
+    # Set the global index of the definitions.
     for index in range(definitions_count):
         dex_raw_definitions[index]['index'] = index
 
@@ -184,8 +195,6 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     for dex_raw_definition in dex_raw_definitions:
         dex_definition_index = dex_raw_definition['index']
 
-        dex_definition_html_rep = dex_raw_definition['htmlRep']
-
         definition_url = create_definition_url(
             raw_definition=dex_raw_definition,
             url=url
@@ -200,11 +209,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
         message_limit = get_message_limit(footer)
 
-        fragments = html.fragments_fromstring(dex_definition_html_rep)
-        root = html.Element('root')
-
-        for fragment in fragments:
-            root.append(fragment)
+        root = get_html(dex_raw_definition)
 
         dex_definition_html = ''
         dex_definition_title = ''
