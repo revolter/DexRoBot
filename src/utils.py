@@ -140,6 +140,17 @@ def get_html(raw_definition):
     return root
 
 
+def replace_superscripts(root, definition_url):
+    for sup in root.findall('sup'):
+        sup_text = sup.text_content()
+        superscript_text = get_superscript(sup_text)
+
+        if superscript_text:
+            sup.text = superscript_text
+        else:
+            logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -214,14 +225,10 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         dex_definition_html = ''
         dex_definition_title = ''
 
-        for sup in root.findall('sup'):
-            sup_text = sup.text_content()
-            superscript_text = get_superscript(sup_text)
-
-            if superscript_text:
-                sup.text = superscript_text
-            else:
-                logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
+        replace_superscripts(
+            root=root,
+            definition_url=definition_url
+        )
 
         if links_toggle:
             etree.strip_tags(root, '*')
