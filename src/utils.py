@@ -272,6 +272,24 @@ def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name)
     )
 
 
+def get_inline_query_definition_result(parsed_definition, inline_keyboard_buttons):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+
+    return InlineQueryResultArticle(
+        id=uuid4(),
+        title=parsed_definition.title,
+        thumb_url=DEX_THUMBNAIL_URL,
+        url=parsed_definition.url,
+        hide_url=True,
+        reply_markup=reply_markup,
+        input_message_content=InputTextMessageContent(
+            message_text=parsed_definition.html,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
+    )
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -333,20 +351,9 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             bot_name=bot_name
         )
         inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, parsed_definition.index, links_toggle)
-        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
-
-        definition_result = InlineQueryResultArticle(
-            id=uuid4(),
-            title=parsed_definition.title,
-            thumb_url=DEX_THUMBNAIL_URL,
-            url=parsed_definition.url,
-            hide_url=True,
-            reply_markup=reply_markup,
-            input_message_content=InputTextMessageContent(
-                message_text=parsed_definition.html,
-                parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True
-            )
+        definition_result = get_inline_query_definition_result(
+            parsed_definition=parsed_definition,
+            inline_keyboard_buttons=inline_keyboard_buttons
         )
 
         definitions.append(definition_result)
