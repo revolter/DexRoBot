@@ -5,6 +5,7 @@ from urllib.parse import quote
 from uuid import uuid4
 
 import base64
+import collections
 import json
 import logging
 
@@ -241,7 +242,8 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         root = get_html(raw_definition)
 
         definition_html_text = ''
-        definition_title = ''
+        definition_title: str
+        elements: collections.Iterator
 
         replace_superscripts(
             root=root,
@@ -253,11 +255,22 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
             text = root.text
 
-            definition_text_content = ''
+            definition_title = text
+            elements = WORD_REGEX.finditer(text)
+        else:
+            definition_title = ''
+            elements = root.iterchildren()
 
-            for match in WORD_REGEX.finditer(text):
-                word = match.group('word')
-                other = match.group('other')
+        definition_text_content = ''
+
+        for element in elements:
+            text_content = None
+            extra_text_content = None
+            html_text = None
+
+            if links_toggle:
+                word = element.group('word')
+                other = element.group('other')
 
                 if word is not None:
                     text_content = escape(word)
@@ -266,25 +279,9 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                         bot_name=bot_name
                     )
 
-                    if len(definition_text_content) + len(text_content) > message_limit:
-                        definition_html_text += ELLIPSIS
-
-                        break
-                    else:
-                        definition_html_text += html_text
-                        definition_text_content += text_content
-
                 if other is not None:
-                    other = escape(other)
-
-                    definition_html_text += other
-                    definition_text_content += other
-
-            definition_title = text
-        else:
-            definition_text_content = ''
-
-            for element in root.iterchildren():
+                    extra_text_content = escape(other)
+            else:
                 clean_html_element(element)
 
                 text_content = element.text_content() + (element.tail or '')
@@ -292,6 +289,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
                 definition_title += text_content
 
+            if text_content:
                 if len(definition_text_content) + len(text_content) > message_limit:
                     definition_html_text += ELLIPSIS
 
@@ -299,6 +297,10 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                 else:
                     definition_html_text += html_text
                     definition_text_content += text_content
+
+            if extra_text_content:
+                definition_html_text += extra_text_content
+                definition_text_content += extra_text_content
 
         if cli_args.debug:
             definition_title = '{}: {}'.format(definition_index, definition_title)
