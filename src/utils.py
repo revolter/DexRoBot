@@ -175,7 +175,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     if cli_args.fragment:
         url = 'debug'
 
-        dex_raw_definitions = [{
+        raw_definitions = [{
             'id': 0,
             'htmlRep': cli_args.fragment,
             'sourceName': None,
@@ -185,15 +185,15 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
         raw_response = get_raw_response(api_url)
 
-        dex_raw_definitions = raw_response['definitions']
+        raw_definitions = raw_response['definitions']
 
         url = api_url[:- len(DEX_API_JSON_PATH)]
 
-    definitions_count = len(dex_raw_definitions)
+    definitions_count = len(raw_definitions)
 
     # Set the global index of the definitions.
     for index in range(definitions_count):
-        dex_raw_definitions[index]['index'] = index
+        raw_definitions[index]['index'] = index
 
     if cli_args.index is not None:
         if cli_args.index >= definitions_count:
@@ -201,7 +201,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
             return
 
-        dex_raw_definitions = [dex_raw_definitions[cli_args.index]]
+        raw_definitions = [raw_definitions[cli_args.index]]
 
     definitions = []
 
@@ -217,20 +217,20 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         offset = int(offset_string)
 
         if offset < definitions_count:
-            dex_raw_definitions = dex_raw_definitions[offset + 1:]
+            raw_definitions = raw_definitions[offset + 1:]
     elif is_inline_query:
         analytics.track(AnalyticsType.INLINE_QUERY, user, query)
 
-    for dex_raw_definition in dex_raw_definitions:
-        dex_definition_index = dex_raw_definition['index']
+    for raw_definition in raw_definitions:
+        definition_index = raw_definition['index']
 
         definition_url = create_definition_url(
-            raw_definition=dex_raw_definition,
+            raw_definition=raw_definition,
             url=url
         )
 
         footer = create_footer(
-            raw_definition=dex_raw_definition,
+            raw_definition=raw_definition,
             definition_url=definition_url
         )
 
@@ -238,10 +238,10 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
         message_limit = get_message_limit(footer)
 
-        root = get_html(dex_raw_definition)
+        root = get_html(raw_definition)
 
-        dex_definition_html = ''
-        dex_definition_title = ''
+        definition_html_text = ''
+        definition_title = ''
 
         replace_superscripts(
             root=root,
@@ -253,7 +253,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
             text = root.text
 
-            dex_definition_string = ''
+            definition_text_content = ''
 
             for match in WORD_REGEX.finditer(text):
                 word = match.group('word')
@@ -266,23 +266,23 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                         bot_name=bot_name
                     )
 
-                    if len(dex_definition_string) + len(text_content) > message_limit:
-                        dex_definition_html += ELLIPSIS
+                    if len(definition_text_content) + len(text_content) > message_limit:
+                        definition_html_text += ELLIPSIS
 
                         break
                     else:
-                        dex_definition_html += html_text
-                        dex_definition_string += text_content
+                        definition_html_text += html_text
+                        definition_text_content += text_content
 
                 if other is not None:
                     other = escape(other)
 
-                    dex_definition_html += other
-                    dex_definition_string += other
+                    definition_html_text += other
+                    definition_text_content += other
 
-            dex_definition_title = text
+            definition_title = text
         else:
-            dex_definition_string = ''
+            definition_text_content = ''
 
             for element in root.iterchildren():
                 clean_html_element(element)
@@ -290,60 +290,60 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                 text_content = element.text_content() + (element.tail or '')
                 html_text = html.tostring(element).decode()
 
-                dex_definition_title += text_content
+                definition_title += text_content
 
-                if len(dex_definition_string) + len(text_content) > message_limit:
-                    dex_definition_html += ELLIPSIS
+                if len(definition_text_content) + len(text_content) > message_limit:
+                    definition_html_text += ELLIPSIS
 
                     break
                 else:
-                    dex_definition_html += html_text
-                    dex_definition_string += text_content
+                    definition_html_text += html_text
+                    definition_text_content += text_content
 
         if cli_args.debug:
-            dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
+            definition_title = '{}: {}'.format(definition_index, definition_title)
 
-        dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
+        definition_title = definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
 
-        if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
-            dex_definition_title += ELLIPSIS
+        if len(definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
+            definition_title = definition_title[:- len(ELLIPSIS)]
+            definition_title += ELLIPSIS
 
-        dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
+        definition_html_text += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
 
         if cli_args.debug:
-            logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
+            logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
 
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, dex_definition_index, links_toggle)
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, definition_index, links_toggle)
 
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
-        dex_definition_result = InlineQueryResultArticle(
+        definition_result = InlineQueryResultArticle(
             id=uuid4(),
-            title=dex_definition_title,
+            title=definition_title,
             thumb_url=DEX_THUMBNAIL_URL,
             url=definition_url,
             hide_url=True,
             reply_markup=reply_markup,
             input_message_content=InputTextMessageContent(
-                message_text=dex_definition_html,
+                message_text=definition_html_text,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True
             )
         )
 
-        definitions.append(dex_definition_result)
+        definitions.append(definition_result)
 
     return definitions, offset
 
 
 def clear_definitions_cache(query):
-    dex_api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
+    api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
 
     cache = requests_cache.core.get_cache()
 
-    if cache.has_url(dex_api_url):
-        cache.delete_url(dex_api_url)
+    if cache.has_url(api_url):
+        cache.delete_url(api_url)
 
         return 'Cache successfully deleted for "{}"'.format(query)
     else:
