@@ -260,27 +260,24 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                 other = match.group('other')
 
                 if word is not None:
-                    word = escape(word)
-
-                    link_text = get_word_link(
-                        word=word,
+                    text_content = escape(word)
+                    html_text = get_word_link(
+                        word=text_content,
                         bot_name=bot_name
                     )
 
-                    if len(dex_definition_string) + len(word) > message_limit:
+                    if len(dex_definition_string) + len(text_content) > message_limit:
                         dex_definition_html += ELLIPSIS
 
                         break
                     else:
-                        dex_definition_html += link_text
-
-                        dex_definition_string += word
+                        dex_definition_html += html_text
+                        dex_definition_string += text_content
 
                 if other is not None:
                     other = escape(other)
 
                     dex_definition_html += other
-
                     dex_definition_string += other
 
             dex_definition_title = text
@@ -290,20 +287,18 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             for element in root.iterchildren():
                 clean_html_element(element)
 
-                text = element.text_content() + (element.tail or '')
+                text_content = element.text_content() + (element.tail or '')
+                html_text = html.tostring(element).decode()
 
-                string = html.tostring(element).decode()
+                dex_definition_title += text_content
 
-                dex_definition_title += text
-
-                if len(dex_definition_string) + len(text) > message_limit:
+                if len(dex_definition_string) + len(text_content) > message_limit:
                     dex_definition_html += ELLIPSIS
 
                     break
                 else:
-                    dex_definition_html += string
-
-                    dex_definition_string += text
+                    dex_definition_html += html_text
+                    dex_definition_string += text_content
 
         if cli_args.debug:
             dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
