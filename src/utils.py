@@ -151,6 +151,13 @@ def replace_superscripts(root, definition_url):
             logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
 
 
+def get_word_link(word, bot_name):
+    link = A(word)
+    link.set('href', BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
+
+    return html.tostring(link).decode()
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -244,11 +251,10 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                 if word is not None:
                     word = escape(word)
 
-                    link = A(word)
-
-                    link.set('href', BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
-
-                    link_text = html.tostring(link).decode()
+                    link_text = get_word_link(
+                        word=word,
+                        bot_name=bot_name
+                    )
 
                     if len(dex_definition_string) + len(word) > message_limit:
                         dex_definition_html += ELLIPSIS
