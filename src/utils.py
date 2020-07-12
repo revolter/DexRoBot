@@ -158,6 +158,17 @@ def get_word_link(word, bot_name):
     return html.tostring(link).decode()
 
 
+def clean_html_element(element):
+    etree.strip_tags(element, '*')
+
+    if element.tag not in ['b', 'i']:
+        element.tag = 'i'
+
+    # etree.strip_attributes(element, '*') should work too.
+    # See https://bugs.launchpad.net/lxml/+bug/1846267.
+    element.attrib.clear()
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -277,14 +288,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
             dex_definition_string = ''
 
             for element in root.iterchildren():
-                etree.strip_tags(element, '*')
-
-                if element.tag not in ['b', 'i']:
-                    element.tag = 'i'
-
-                # etree.strip_attributes(element, '*') should work too.
-                # See https://bugs.launchpad.net/lxml/+bug/1846267.
-                element.attrib.clear()
+                clean_html_element(element)
 
                 text = element.text_content() + (element.tail or '')
 
