@@ -36,6 +36,10 @@ from constants import (
 from database import User
 
 logger = logging.getLogger(__name__)
+ParsedDefinition = collections.namedtuple(
+    typename='ParsedDefinition',
+    field_names='index title html url'
+)
 
 
 def check_admin(bot, message, analytics, admin_user_id):
@@ -170,6 +174,104 @@ def clean_html_element(element):
     element.attrib.clear()
 
 
+def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name):
+    definition_index = raw_definition['index']
+
+    definition_url = create_definition_url(
+        raw_definition=raw_definition,
+        url=url
+    )
+    footer = create_footer(
+        raw_definition=raw_definition,
+        definition_url=definition_url
+    )
+
+    message_limit = get_message_limit(footer)
+    root = get_html(raw_definition)
+
+    definition_title: str
+    definition_html_text = ''
+    elements: collections.Iterator
+
+    replace_superscripts(
+        root=root,
+        definition_url=definition_url
+    )
+
+    if links_toggle:
+        etree.strip_tags(root, '*')
+
+        text = root.text
+
+        definition_title = text
+        elements = WORD_REGEX.finditer(text)
+    else:
+        definition_title = ''
+        elements = root.iterchildren()
+
+    definition_text_content = ''
+
+    for element in elements:
+        text_content = None
+        extra_text_content = None
+        html_text = None
+
+        if links_toggle:
+            word = element.group('word')
+            other = element.group('other')
+
+            if word is not None:
+                text_content = escape(word)
+                html_text = get_word_link(
+                    word=text_content,
+                    bot_name=bot_name
+                )
+
+            if other is not None:
+                extra_text_content = escape(other)
+        else:
+            clean_html_element(element)
+
+            text_content = element.text_content() + (element.tail or '')
+            html_text = html.tostring(element).decode()
+
+            definition_title += text_content
+
+        if text_content:
+            if len(definition_text_content) + len(text_content) > message_limit:
+                definition_html_text += ELLIPSIS
+
+                break
+            else:
+                definition_html_text += html_text
+                definition_text_content += text_content
+
+        if extra_text_content:
+            definition_html_text += extra_text_content
+            definition_text_content += extra_text_content
+
+    if cli_args.debug:
+        definition_title = '{}: {}'.format(definition_index, definition_title)
+
+    definition_title = definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
+
+    if len(definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
+        definition_title = definition_title[:- len(ELLIPSIS)]
+        definition_title += ELLIPSIS
+
+    definition_html_text += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
+
+    if cli_args.debug:
+        logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
+
+    return ParsedDefinition(
+        index=definition_index,
+        title=definition_title,
+        html=definition_html_text,
+        url=definition_url
+    )
+
+
 def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
@@ -223,112 +325,25 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         analytics.track(AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
-        definition_index = raw_definition['index']
-
-        definition_url = create_definition_url(
+        parsed_definition = get_parsed_definition(
             raw_definition=raw_definition,
-            url=url
+            url=url,
+            links_toggle=links_toggle,
+            cli_args=cli_args,
+            bot_name=bot_name
         )
-
-        footer = create_footer(
-            raw_definition=raw_definition,
-            definition_url=definition_url
-        )
-
-        # Definition
-
-        message_limit = get_message_limit(footer)
-
-        root = get_html(raw_definition)
-
-        definition_html_text = ''
-        definition_title: str
-        elements: collections.Iterator
-
-        replace_superscripts(
-            root=root,
-            definition_url=definition_url
-        )
-
-        if links_toggle:
-            etree.strip_tags(root, '*')
-
-            text = root.text
-
-            definition_title = text
-            elements = WORD_REGEX.finditer(text)
-        else:
-            definition_title = ''
-            elements = root.iterchildren()
-
-        definition_text_content = ''
-
-        for element in elements:
-            text_content = None
-            extra_text_content = None
-            html_text = None
-
-            if links_toggle:
-                word = element.group('word')
-                other = element.group('other')
-
-                if word is not None:
-                    text_content = escape(word)
-                    html_text = get_word_link(
-                        word=text_content,
-                        bot_name=bot_name
-                    )
-
-                if other is not None:
-                    extra_text_content = escape(other)
-            else:
-                clean_html_element(element)
-
-                text_content = element.text_content() + (element.tail or '')
-                html_text = html.tostring(element).decode()
-
-                definition_title += text_content
-
-            if text_content:
-                if len(definition_text_content) + len(text_content) > message_limit:
-                    definition_html_text += ELLIPSIS
-
-                    break
-                else:
-                    definition_html_text += html_text
-                    definition_text_content += text_content
-
-            if extra_text_content:
-                definition_html_text += extra_text_content
-                definition_text_content += extra_text_content
-
-        if cli_args.debug:
-            definition_title = '{}: {}'.format(definition_index, definition_title)
-
-        definition_title = definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
-
-        if len(definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            definition_title = definition_title[:- len(ELLIPSIS)]
-            definition_title += ELLIPSIS
-
-        definition_html_text += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
-
-        if cli_args.debug:
-            logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
-
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, definition_index, links_toggle)
-
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, parsed_definition.index, links_toggle)
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition_result = InlineQueryResultArticle(
             id=uuid4(),
-            title=definition_title,
+            title=parsed_definition.title,
             thumb_url=DEX_THUMBNAIL_URL,
-            url=definition_url,
+            url=parsed_definition.url,
             hide_url=True,
             reply_markup=reply_markup,
             input_message_content=InputTextMessageContent(
-                message_text=definition_html_text,
+                message_text=parsed_definition.html,
                 parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True
             )
