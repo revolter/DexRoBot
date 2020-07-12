@@ -277,6 +277,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
                     element.tag = 'i'
 
                 # etree.strip_attributes(element, '*') should work too.
+                # See https://bugs.launchpad.net/lxml/+bug/1846267.
                 element.attrib.clear()
 
                 text = element.text_content() + (element.tail or '')
