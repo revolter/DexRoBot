@@ -51,9 +51,9 @@ from queue_bot import QueueBot
 from queue_updater import QueueUpdater
 from utils import (
     check_admin, send_no_results_message,
-    get_definitions, clear_definitions_cache,
+    get_query_definitions, get_word_of_the_day_definition, clear_definitions_cache,
     get_definition_inline_keyboard_buttons,
-    get_subscription_onboarding_inline_keyboard_buttons, get_subscription_cancel_inline_keyboard_button,
+    get_subscription_onboarding_inline_keyboard_buttons,
     base64_encode, base64_decode
 )
 
@@ -106,7 +106,7 @@ def start_command_handler(update: Update, context: CallbackContext):
 
         links_toggle = False
 
-        (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
             send_no_results_message(bot, chat_id, message_id, query)
@@ -240,7 +240,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     definitions_count = len(definitions)
 
@@ -293,7 +293,7 @@ def message_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
         send_no_results_message(bot, chat_id, message_id, query)
@@ -372,7 +372,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
         offset = callback_data[BUTTON_DATA_OFFSET_KEY]
         links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
 
-        (definitions, _) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, _) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
         inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
@@ -404,13 +404,34 @@ def message_answer_handler(update: Update, context: CallbackContext):
 def word_of_the_day_job_handler(context: CallbackContext):
     bot: QueueBot = context.bot
 
-    reply_markup = InlineKeyboardMarkup(get_subscription_cancel_inline_keyboard_button())
+    definition = get_word_of_the_day_definition(
+        links_toggle=False,
+        cli_args=cli_args,
+        bot_name=BOT_NAME
+    )
+
+    reply_markup = definition.reply_markup
+    image_url = definition.url
+
+    definition_content = definition.input_message_content
+    definition_text = definition_content.message_text
+    parse_mode = definition_content.parse_mode
 
     for user in User.select().where(User.subscription == User.Subscription.accepted.value):
+        id = user.telegram_id
+
         bot.queue_message(
-            chat_id=user.telegram_id,
-            text='Cuvântul zilei:',
+            chat_id=id,
+            text=definition_text,
             reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            disable_web_page_preview=True,
+            disable_notification=True
+        )
+
+        bot.queue_photo(
+            chat_id=id,
+            photo=image_url,
             disable_notification=True
         )
 

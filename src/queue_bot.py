@@ -21,3 +21,7 @@ class QueueBot(Bot):
     @messagequeue.queuedmessage
     def queue_message(self, *args, **kwargs):
         return super().send_message(*args, **kwargs)
+
+    @messagequeue.queuedmessage
+    def queue_photo(self, *args, **kwargs):
+        return super().send_photo(*args, **kwargs)

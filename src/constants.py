@@ -18,6 +18,7 @@ DEX_BASE_URL = 'https://dexonline.ro'
 
 DEX_API_JSON_PATH = '/json'
 DEX_DEFINITION_API_URL_FORMAT = '{}/definitie/{{}}{}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
+DEX_WORD_OF_THE_DAY_URL = '{}/cuvantul-zilei{}?t={{}}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
 DEX_SEARCH_URL_FORMAT = '{}/text/{{}}'.format(DEX_BASE_URL)
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'

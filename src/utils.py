@@ -8,6 +8,7 @@ import base64
 import collections
 import json
 import logging
+import time
 
 from lxml import etree, html
 from lxml.html.builder import A
@@ -23,7 +24,7 @@ import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_JSON_PATH, DEX_DEFINITION_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
+    DEX_API_JSON_PATH, DEX_DEFINITION_API_URL_FORMAT, DEX_WORD_OF_THE_DAY_URL, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     BOT_START_URL_FORMAT,
     WORD_REGEX,
@@ -174,8 +175,8 @@ def clean_html_element(element):
     element.attrib.clear()
 
 
-def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name):
-    definition_index = raw_definition['index']
+def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name, prefix='', suffix=''):
+    definition_index = raw_definition.get('index', 'N/A')
 
     definition_url = create_definition_url(
         raw_definition=raw_definition,
@@ -190,7 +191,7 @@ def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name)
     root = get_html(raw_definition)
 
     definition_title: str
-    definition_html_text = ''
+    definition_html_text = prefix
     elements: collections.Iterator
 
     replace_superscripts(
@@ -238,7 +239,7 @@ def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name)
             definition_title += text_content
 
         if text_content:
-            if len(definition_text_content) + len(text_content) > message_limit:
+            if len(definition_text_content) + len(text_content) + len(suffix) > message_limit:
                 definition_html_text += ELLIPSIS
 
                 break
@@ -260,6 +261,7 @@ def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name)
         definition_title += ELLIPSIS
 
     definition_html_text += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
+    definition_html_text += suffix
 
     if cli_args.debug:
         logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
@@ -290,7 +292,7 @@ def get_inline_query_definition_result(parsed_definition, inline_keyboard_button
     )
 
 
-def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
+def get_query_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
     if cli_args.fragment:
@@ -359,6 +361,47 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         definitions.append(definition_result)
 
     return definitions, offset
+
+
+def get_word_of_the_day_definition(links_toggle, cli_args, bot_name):
+    timestamp = int(time.time())
+    api_url = DEX_WORD_OF_THE_DAY_URL.format(timestamp)
+    raw_response = get_raw_response(api_url)
+
+    day = raw_response['day']
+    month = raw_response['month']
+
+    raw_requested = raw_response['requested']
+    raw_record = raw_requested['record']
+
+    year = raw_record['year']
+    reason = raw_record['reason']
+    image_url = raw_record['image']
+
+    raw_definition = raw_record['definition']
+
+    url = api_url[:- len(DEX_API_JSON_PATH)]
+    prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
+    suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
+
+    parsed_definition = get_parsed_definition(
+        raw_definition=raw_definition,
+        url=url,
+        links_toggle=links_toggle,
+        cli_args=cli_args,
+        bot_name=bot_name,
+        prefix=prefix,
+        suffix=suffix
+    )
+    inline_keyboard_buttons = get_subscription_cancel_inline_keyboard_button()
+    definition_result = get_inline_query_definition_result(
+        parsed_definition=parsed_definition,
+        inline_keyboard_buttons=inline_keyboard_buttons
+    )
+
+    definition_result.url = image_url
+
+    return definition_result
 
 
 def clear_definitions_cache(query):
