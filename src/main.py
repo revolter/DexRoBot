@@ -53,7 +53,7 @@ from utils import (
     check_admin, send_no_results_message,
     get_query_definitions, get_word_of_the_day_definition, clear_definitions_cache,
     get_definition_inline_keyboard_buttons,
-    get_subscription_onboarding_inline_keyboard_buttons, get_subscription_notification_inline_keyboard_buttons,
+    send_subscription_onboarding_message_if_needed, get_subscription_notification_inline_keyboard_buttons,
     base64_encode, base64_decode
 )
 
@@ -125,6 +125,12 @@ def start_command_handler(update: Update, context: CallbackContext):
                 parse_mode=definition_content.parse_mode,
                 disable_web_page_preview=True,
                 reply_to_message_id=message_id
+            )
+
+            send_subscription_onboarding_message_if_needed(
+                bot=bot,
+                user=user,
+                chat_id=chat_id
             )
     else:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
@@ -314,16 +320,11 @@ def message_handler(update: Update, context: CallbackContext):
             reply_to_message_id=message_id
         )
 
-    db_user = User.get_or_none(User.telegram_id == user.id)
-
-    if db_user is not None and db_user.subscription == User.Subscription.undetermined.value:
-        reply_markup = InlineKeyboardMarkup(get_subscription_onboarding_inline_keyboard_buttons())
-
-        bot.send_message(
-            chat_id=chat_id,
-            text='Vrei să primești cuvântul zilei?',
-            reply_markup=reply_markup
-        )
+    send_subscription_onboarding_message_if_needed(
+        bot=bot,
+        user=user,
+        chat_id=chat_id
+    )
 
 
 def message_answer_handler(update: Update, context: CallbackContext):

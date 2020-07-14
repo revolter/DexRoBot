@@ -506,6 +506,24 @@ def get_definition_inline_keyboard_buttons(query, definitions_count, offset, lin
     return buttons
 
 
+def send_subscription_onboarding_message_if_needed(bot, user, chat_id):
+    db_user = User.get_or_none(User.telegram_id == user.id)
+
+    if db_user is None:
+        return
+
+    if db_user.subscription != User.Subscription.undetermined.value:
+        return
+
+    reply_markup = InlineKeyboardMarkup(get_subscription_onboarding_inline_keyboard_buttons())
+
+    bot.send_message(
+        chat_id=chat_id,
+        text='Vrei să primești cuvântul zilei?',
+        reply_markup=reply_markup
+    )
+
+
 def get_subscription_onboarding_inline_keyboard_buttons():
     no_data = {
         BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
