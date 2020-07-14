@@ -17,8 +17,8 @@ EPOCH_DATE = datetime(1970, 1, 1)
 DEX_BASE_URL = 'https://dexonline.ro'
 
 DEX_API_JSON_PATH = '/json'
-DEX_DEFINITION_API_URL_FORMAT = '{}/{}{}'.format(DEX_BASE_URL, 'definitie/{}', DEX_API_JSON_PATH)
-DEX_SEARCH_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'text/{}')
+DEX_DEFINITION_API_URL_FORMAT = '{}/definitie/{{}}{}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
+DEX_SEARCH_URL_FORMAT = '{}/text/{{}}'.format(DEX_BASE_URL)
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
