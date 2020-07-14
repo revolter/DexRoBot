@@ -32,7 +32,7 @@ from constants import (
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
     LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT,
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
-    BUTTON_DATA_SUBSCRIPTION_STATE_KEY
+    BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
 from database import User
 
@@ -363,7 +363,7 @@ def get_query_definitions(update, query, links_toggle, analytics, cli_args, bot_
     return definitions, offset
 
 
-def get_word_of_the_day_definition(links_toggle, cli_args, bot_name):
+def get_word_of_the_day_definition(links_toggle, cli_args, bot_name, with_stop=False):
     timestamp = int(time.time())
     api_url = DEX_WORD_OF_THE_DAY_URL.format(timestamp)
     raw_response = get_raw_response(api_url)
@@ -393,7 +393,10 @@ def get_word_of_the_day_definition(links_toggle, cli_args, bot_name):
         prefix=prefix,
         suffix=suffix
     )
-    inline_keyboard_buttons = get_subscription_cancel_inline_keyboard_button()
+    inline_keyboard_buttons = get_subscription_notification_inline_keyboard_buttons(
+        links_toggle=links_toggle,
+        with_stop=with_stop
+    )
     definition_result = get_inline_query_definition_result(
         parsed_definition=parsed_definition,
         inline_keyboard_buttons=inline_keyboard_buttons
@@ -505,6 +508,7 @@ def get_definition_inline_keyboard_buttons(query, definitions_count, offset, lin
 
 def get_subscription_onboarding_inline_keyboard_buttons():
     no_data = {
+        BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
         BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.denied.value
     }
 
@@ -514,6 +518,7 @@ def get_subscription_onboarding_inline_keyboard_buttons():
     )
 
     yes_data = {
+        BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
         BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.accepted.value
     }
 
@@ -525,17 +530,43 @@ def get_subscription_onboarding_inline_keyboard_buttons():
     return [[no_button, yes_button]]
 
 
-def get_subscription_cancel_inline_keyboard_button():
-    data = {
-        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.revoked.value
+def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, with_stop=True):
+    links_toggle_data = {
+        BUTTON_DATA_LINKS_TOGGLE_KEY: not links_toggle,
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: None
     }
 
-    button = InlineKeyboardButton(
-        text='Oprește',
-        callback_data=json.dumps(data)
+    links_toggle_text = LINKS_TOGGLE_ON_TEXT if links_toggle else LINKS_TOGGLE_OFF_TEXT
+
+    links_toggle_button = InlineKeyboardButton(
+        text=links_toggle_text,
+        callback_data=json.dumps(links_toggle_data)
     )
 
-    return [[button]]
+    subscription_data: dict
+    subscription_text: str
+
+    if with_stop:
+        subscription_data = {
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle,
+            BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.revoked.value
+        }
+
+        subscription_text = 'Oprește'
+    else:
+        subscription_data = {
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle,
+            BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.accepted.value
+        }
+
+        subscription_text = 'Repornește'
+
+    subscription_button = InlineKeyboardButton(
+        text=subscription_text,
+        callback_data=json.dumps(subscription_data)
+    )
+
+    return [[links_toggle_button, subscription_button]]
 
 
 def base64_encode(string):

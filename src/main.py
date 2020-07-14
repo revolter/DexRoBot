@@ -44,7 +44,7 @@ from analytics import Analytics, AnalyticsType
 from constants import (
     RESULTS_CACHE_TIME,
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
-    BUTTON_DATA_SUBSCRIPTION_STATE_KEY
+    BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
 from database import User
 from queue_bot import QueueBot
@@ -53,7 +53,7 @@ from utils import (
     check_admin, send_no_results_message,
     get_query_definitions, get_word_of_the_day_definition, clear_definitions_cache,
     get_definition_inline_keyboard_buttons,
-    get_subscription_onboarding_inline_keyboard_buttons,
+    get_subscription_onboarding_inline_keyboard_buttons, get_subscription_notification_inline_keyboard_buttons,
     base64_encode, base64_decode
 )
 
@@ -348,6 +348,11 @@ def message_answer_handler(update: Update, context: CallbackContext):
         chat_id = callback_message.chat_id
         message_id = callback_message.message_id
 
+    links_toggle = False
+
+    if BUTTON_DATA_LINKS_TOGGLE_KEY in callback_data:
+        links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
+
     if BUTTON_DATA_SUBSCRIPTION_STATE_KEY in callback_data:
         state: int = callback_data[BUTTON_DATA_SUBSCRIPTION_STATE_KEY]
         user_id = update.effective_user.id
@@ -355,22 +360,54 @@ def message_answer_handler(update: Update, context: CallbackContext):
         db_user: User = User.get_or_none(User.telegram_id == user_id)
 
         if db_user is not None:
-            subscription = User.Subscription(state)
+            is_toggling_links = state is None
 
-            db_user.subscription = subscription.value
-            db_user.save()
-
-            if subscription == User.Subscription.revoked:
-                callback_query.edit_message_reply_markup(None)
-            else:
-                bot.delete_message(
-                    chat_id=chat_id,
-                    message_id=message_id
+            if is_toggling_links:
+                is_active = db_user.subscription != User.Subscription.revoked.value
+                definition = get_word_of_the_day_definition(
+                    links_toggle=links_toggle,
+                    cli_args=cli_args,
+                    bot_name=BOT_NAME,
+                    with_stop=is_active
                 )
+
+                reply_markup = definition.reply_markup
+
+                definition_content = definition.input_message_content
+                definition_text = definition_content.message_text
+                parse_mode = definition_content.parse_mode
+
+                bot.edit_message_text(
+                    text=definition_text,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode,
+                    disable_web_page_preview=True
+                )
+            else:
+                subscription = User.Subscription(state)
+
+                db_user.subscription = subscription.value
+                db_user.save()
+
+                if BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
+                    bot.delete_message(
+                        chat_id=chat_id,
+                        message_id=message_id
+                    )
+                else:
+                    is_active = db_user.subscription != User.Subscription.revoked.value
+                    reply_markup = InlineKeyboardMarkup(get_subscription_notification_inline_keyboard_buttons(
+                        links_toggle=links_toggle,
+                        with_stop=is_active
+                    ))
+
+                    callback_query.edit_message_reply_markup(reply_markup)
+
     else:
         query = callback_data[BUTTON_DATA_QUERY_KEY]
         offset = callback_data[BUTTON_DATA_OFFSET_KEY]
-        links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
 
         (definitions, _) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
@@ -407,7 +444,8 @@ def word_of_the_day_job_handler(context: CallbackContext):
     definition = get_word_of_the_day_definition(
         links_toggle=False,
         cli_args=cli_args,
-        bot_name=BOT_NAME
+        bot_name=BOT_NAME,
+        with_stop=True
     )
 
     reply_markup = definition.reply_markup
