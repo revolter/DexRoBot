@@ -95,7 +95,7 @@ def send_no_results_message(bot, chat_id, message_id, query):
 
 
 def get_raw_response(api_url):
-    api_request = requests.get('https://dexonline.ro/cuvantul-zilei/2020/07/15/json')
+    api_request = requests.get(api_url)
     api_final_url = api_request.url
 
     if not api_final_url.endswith(DEX_API_JSON_PATH):
