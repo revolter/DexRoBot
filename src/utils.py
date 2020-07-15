@@ -8,6 +8,7 @@ import base64
 import collections
 import json
 import logging
+import regex
 import time
 
 from lxml import etree, html
@@ -24,7 +25,8 @@ import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_JSON_PATH, DEX_DEFINITION_API_URL_FORMAT, DEX_WORD_OF_THE_DAY_URL, DEX_SEARCH_URL_FORMAT,
+    DEX_API_JSON_PATH, DEX_API_SUFFIX_REGEX,
+    DEX_DEFINITION_API_URL_FORMAT, DEX_WORD_OF_THE_DAY_URL, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     BOT_START_URL_FORMAT,
     WORD_REGEX,
@@ -380,7 +382,11 @@ def get_word_of_the_day_definition(links_toggle, cli_args, bot_name, with_stop=F
 
     raw_definition = raw_record['definition']
 
-    url = api_url[:- len(DEX_API_JSON_PATH)]
+    url = regex.sub(
+        pattern=DEX_API_SUFFIX_REGEX,
+        repl='',
+        string=api_url
+    )
     prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
     suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
 
