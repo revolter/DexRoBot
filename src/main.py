@@ -625,9 +625,9 @@ if __name__ == '__main__':
         offset = datetime.timedelta(hours=2)
         timezone = datetime.timezone(offset)
         time = datetime.time(
-            hour=23,
-            minute=45,
-            second=30,
+            hour=12,
+            minute=0,
+            second=0,
             tzinfo=timezone
         )
 
