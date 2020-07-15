@@ -30,6 +30,8 @@ BOT_START_URL_FORMAT = 'https://telegram.me/{}?start={}'
 WORD_REGEX = regex.compile(r'(?P<word>[\p{L}\p{M}\p{N}]+)|(?P<other>\P{L}+)')
 
 UNICODE_SUPERSCRIPTS = {
+    # Source: https://www.fileformat.info/info/unicode/block/superscripts_and_subscripts/list.htm.
+
     '0': '⁰',
     '1': '¹',
     '2': '²',
@@ -41,15 +43,60 @@ UNICODE_SUPERSCRIPTS = {
     '8': '⁸',
     '9': '⁹',
 
-    'i': 'ⁱ',
-    'n': 'ⁿ',
-
     '+': '⁺',
     '-': '⁻',
     '=': '⁼',
 
     '(': '⁽',
-    ')': '⁾'
+    ')': '⁾',
+
+    # Source: https://www.fileformat.info/info/unicode/category/Lm/list.htm.
+
+    'a': 'ᵃ',
+    'b': 'ᵇ',
+    'c': 'ᶜ',
+    'd': 'ᵈ',
+    'e': 'ᵉ',
+    'f': 'ᶠ',
+    'g': 'ᵍ',
+    'h': 'ʰ',
+    'i': 'ⁱ',
+    'j': 'ʲ',
+    'k': 'ᵏ',
+    'l': 'ˡ',
+    'm': 'ᵐ',
+    'n': 'ⁿ',
+    'o': 'ᵒ',
+    'p': 'ᵖ',
+    'r': 'ʳ',
+    's': 'ˢ',
+    't': 'ᵗ',
+    'u': 'ᵘ',
+    'v': 'ᵛ',
+    'w': 'ʷ',
+    'x': 'ˣ',
+    'y': 'ʸ',
+    'z': 'ᶻ',
+
+    'A': 'ᴬ',
+    'B': 'ᴮ',
+    'D': 'ᴰ',
+    'E': 'ᴱ',
+    'G': 'ᴳ',
+    'H': 'ᴴ',
+    'I': 'ᴵ',
+    'J': 'ᴶ',
+    'K': 'ᴷ',
+    'L': 'ᴸ',
+    'M': 'ᴹ',
+    'N': 'ᴺ',
+    'O': 'ᴼ',
+    'P': 'ᴾ',
+    'R': 'ᴿ',
+    'T': 'ᵀ',
+    'U': 'ᵁ',
+    'V': 'ⱽ',
+    'W': 'ᵂ'
 }
 
 ELLIPSIS = '…'
