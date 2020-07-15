@@ -5,6 +5,7 @@ from threading import Thread
 
 import argparse
 import configparser
+import datetime
 import json
 import logging
 import os
@@ -33,20 +34,26 @@ from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
     CallbackContext, CallbackQueryHandler,
     CommandHandler, InlineQueryHandler, MessageHandler,
-    Filters, Updater
+    Filters
 )
+from telegram.utils.request import Request
 
 import requests_cache
 
 from analytics import Analytics, AnalyticsType
 from constants import (
     RESULTS_CACHE_TIME,
-    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY
+    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
+    BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
 from database import User
+from queue_bot import QueueBot
+from queue_updater import QueueUpdater
 from utils import (
     check_admin, send_no_results_message,
-    get_definitions, clear_definitions_cache, get_inline_keyboard_buttons,
+    get_query_definitions, get_word_of_the_day_definition, clear_definitions_cache,
+    get_definition_inline_keyboard_buttons,
+    send_subscription_onboarding_message_if_needed, get_subscription_notification_inline_keyboard_buttons,
     base64_encode, base64_decode
 )
 
@@ -57,7 +64,7 @@ ADMIN_USER_ID = None
 
 logger = logging.getLogger(__name__)
 
-updater = None
+updater: QueueUpdater = None
 analytics = None
 
 
@@ -69,7 +76,7 @@ def stop_and_restart():
 def create_or_update_user(bot, user):
     db_user = User.create_or_update_user(user.id, user.username)
 
-    if db_user and ADMIN_USER_ID:
+    if db_user is not None and ADMIN_USER_ID is not None:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
 
 
@@ -99,12 +106,12 @@ def start_command_handler(update: Update, context: CallbackContext):
 
         links_toggle = False
 
-        (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
             send_no_results_message(bot, chat_id, message_id, query)
         else:
-            inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+            inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
             reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
@@ -118,6 +125,12 @@ def start_command_handler(update: Update, context: CallbackContext):
                 parse_mode=definition_content.parse_mode,
                 disable_web_page_preview=True,
                 reply_to_message_id=message_id
+            )
+
+            send_subscription_onboarding_message_if_needed(
+                bot=bot,
+                user=user,
+                chat_id=chat_id
             )
     else:
         reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
@@ -233,7 +246,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     definitions_count = len(definitions)
 
@@ -286,12 +299,12 @@ def message_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
         send_no_results_message(bot, chat_id, message_id, query)
     else:
-        inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
         reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
 
@@ -307,6 +320,12 @@ def message_handler(update: Update, context: CallbackContext):
             reply_to_message_id=message_id
         )
 
+    send_subscription_onboarding_message_if_needed(
+        bot=bot,
+        user=user,
+        chat_id=chat_id
+    )
+
 
 def message_answer_handler(update: Update, context: CallbackContext):
     callback_query = update.callback_query
@@ -320,6 +339,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
         return
 
     is_inline = callback_query.inline_message_id is not None
+    chat_id = 0
 
     if is_inline:
         message_id = callback_query.inline_message_id
@@ -329,36 +349,129 @@ def message_answer_handler(update: Update, context: CallbackContext):
         chat_id = callback_message.chat_id
         message_id = callback_message.message_id
 
-    query = callback_data[BUTTON_DATA_QUERY_KEY]
-    offset = callback_data[BUTTON_DATA_OFFSET_KEY]
-    links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
+    links_toggle = False
 
-    (definitions, _) = get_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    if BUTTON_DATA_LINKS_TOGGLE_KEY in callback_data:
+        links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
 
-    inline_keyboard_buttons = get_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+    if BUTTON_DATA_SUBSCRIPTION_STATE_KEY in callback_data:
+        state: int = callback_data[BUTTON_DATA_SUBSCRIPTION_STATE_KEY]
+        user_id = update.effective_user.id
 
-    reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+        db_user: User = User.get_or_none(User.telegram_id == user_id)
 
-    definition = definitions[offset]
+        if db_user is not None:
+            is_toggling_links = state is None
+
+            if is_toggling_links:
+                is_active = db_user.subscription != User.Subscription.revoked.value
+                definition = get_word_of_the_day_definition(
+                    links_toggle=links_toggle,
+                    cli_args=cli_args,
+                    bot_name=BOT_NAME,
+                    with_stop=is_active
+                )
+
+                reply_markup = definition.reply_markup
+
+                definition_content = definition.input_message_content
+                definition_text = definition_content.message_text
+                parse_mode = definition_content.parse_mode
+
+                bot.edit_message_text(
+                    text=definition_text,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode,
+                    disable_web_page_preview=True
+                )
+            else:
+                subscription = User.Subscription(state)
+
+                db_user.subscription = subscription.value
+                db_user.save()
+
+                if BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
+                    bot.delete_message(
+                        chat_id=chat_id,
+                        message_id=message_id
+                    )
+                else:
+                    is_active = db_user.subscription != User.Subscription.revoked.value
+                    reply_markup = InlineKeyboardMarkup(get_subscription_notification_inline_keyboard_buttons(
+                        links_toggle=links_toggle,
+                        with_stop=is_active
+                    ))
+
+                    callback_query.edit_message_reply_markup(reply_markup)
+
+    else:
+        query = callback_data[BUTTON_DATA_QUERY_KEY]
+        offset = callback_data[BUTTON_DATA_OFFSET_KEY]
+
+        (definitions, _) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+
+        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+
+        definition = definitions[offset]
+        definition_content = definition.input_message_content
+        definition_text = definition_content.message_text
+
+        if is_inline:
+            bot.edit_message_text(
+                definition_text,
+                inline_message_id=message_id,
+                reply_markup=reply_markup,
+                parse_mode=definition_content.parse_mode,
+                disable_web_page_preview=True
+            )
+        else:
+            bot.edit_message_text(
+                definition_text,
+                chat_id=chat_id,
+                message_id=message_id,
+                reply_markup=reply_markup,
+                parse_mode=definition_content.parse_mode,
+                disable_web_page_preview=True
+            )
+
+
+def word_of_the_day_job_handler(context: CallbackContext):
+    bot: QueueBot = context.bot
+
+    definition = get_word_of_the_day_definition(
+        links_toggle=False,
+        cli_args=cli_args,
+        bot_name=BOT_NAME,
+        with_stop=True
+    )
+
+    reply_markup = definition.reply_markup
+    image_url = definition.url
+
     definition_content = definition.input_message_content
     definition_text = definition_content.message_text
+    parse_mode = definition_content.parse_mode
 
-    if is_inline:
-        bot.edit_message_text(
-            definition_text,
-            inline_message_id=message_id,
+    for user in User.select().where(User.subscription == User.Subscription.accepted.value):
+        id = user.telegram_id
+
+        bot.queue_message(
+            chat_id=id,
+            text=definition_text,
             reply_markup=reply_markup,
-            parse_mode=definition_content.parse_mode,
-            disable_web_page_preview=True
+            parse_mode=parse_mode,
+            disable_web_page_preview=True,
+            disable_notification=True
         )
-    else:
-        bot.edit_message_text(
-            definition_text,
-            chat_id=chat_id,
-            message_id=message_id,
-            reply_markup=reply_markup,
-            parse_mode=definition_content.parse_mode,
-            disable_web_page_preview=True
+
+        bot.queue_photo(
+            chat_id=id,
+            photo=image_url,
+            disable_notification=True
         )
 
 
@@ -419,11 +532,11 @@ def main():
         else:
             logger.info('Started polling')
 
-            updater.start_polling()
+            updater.start_polling(timeout=0.01)
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
-    if ADMIN_USER_ID:
+    if ADMIN_USER_ID is not None:
         updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
 
     updater.idle()
@@ -468,7 +581,16 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    updater = Updater(BOT_TOKEN, use_context=True)
+    request = Request(con_pool_size=8)
+    queue_bot = QueueBot(
+        token=BOT_TOKEN,
+        request=request
+    )
+    updater = QueueUpdater(
+        bot=queue_bot,
+        use_context=True
+    )
+    job_queue = updater.job_queue
     analytics = Analytics()
 
     try:
@@ -500,4 +622,18 @@ if __name__ == '__main__':
 
         inline_query_handler(dummy_update, None)
     else:
+        offset = datetime.timedelta(hours=2)
+        timezone = datetime.timezone(offset)
+        time = datetime.time(
+            hour=12,
+            minute=0,
+            second=0,
+            tzinfo=timezone
+        )
+
+        job_queue.run_daily(
+            callback=word_of_the_day_job_handler,
+            time=time
+        )
+
         main()

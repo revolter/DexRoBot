@@ -17,8 +17,9 @@ EPOCH_DATE = datetime(1970, 1, 1)
 DEX_BASE_URL = 'https://dexonline.ro'
 
 DEX_API_JSON_PATH = '/json'
-DEX_API_URL_FORMAT = '{}/{}{}'.format(DEX_BASE_URL, 'definitie/{}', DEX_API_JSON_PATH)
-DEX_SEARCH_URL_FORMAT = '{}/{}'.format(DEX_BASE_URL, 'text/{}')
+DEX_DEFINITION_API_URL_FORMAT = '{}/definitie/{{}}{}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
+DEX_WORD_OF_THE_DAY_URL = '{}/cuvantul-zilei{}?t={{}}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
+DEX_SEARCH_URL_FORMAT = '{}/text/{{}}'.format(DEX_BASE_URL)
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
@@ -70,6 +71,9 @@ LINKS_TOGGLE_OFF_TEXT = _LINKS_TOOGLE_TEXT_FORMAT.format('on')
 BUTTON_DATA_QUERY_KEY = 'q'
 BUTTON_DATA_OFFSET_KEY = 'o'
 BUTTON_DATA_LINKS_TOGGLE_KEY = 'l'
+
+BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY = 'so'
+BUTTON_DATA_SUBSCRIPTION_STATE_KEY = 's'
 
 
 class LoggerFilter(object):

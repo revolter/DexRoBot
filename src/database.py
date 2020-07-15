@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
+from enum import Enum
 from uuid import uuid4
 
 import logging
 
 from peewee import (
     Model,
-    DateTimeField, TextField, BigIntegerField,
+    BigIntegerField, DateTimeField, IntegerField, TextField,
     PeeweeException, SqliteDatabase
 )
 from peewee_migrate import Router
@@ -39,14 +40,21 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
-    id = TextField(primary_key=False, unique=True, default=uuid4)
+    class Subscription(Enum):
+        undetermined = 0
+        accepted = 1
+        denied = 2
+        revoked = 3
+
+    id = TextField(unique=True, default=uuid4)
     telegram_id = BigIntegerField(unique=True)
     telegram_username = TextField(null=True)
+    subscription = IntegerField(default=0)
 
     def get_markdown_description(self):
         username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
 
-        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1}'.format(self, username)
+        return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1} | {2}'.format(self, username, User.Subscription(self.subscription).name)
 
     def get_created_at(self):
         return self.created_at.strftime(GENERIC_DATE_TIME_FORMAT)

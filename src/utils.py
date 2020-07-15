@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from cgi import escape
+from html import escape
 from urllib.parse import quote
 from uuid import uuid4
 
 import base64
+import collections
 import json
 import logging
+import time
 
 from lxml import etree, html
 from lxml.html.builder import A
@@ -22,23 +24,29 @@ import requests_cache
 
 from analytics import AnalyticsType
 from constants import (
-    DEX_API_JSON_PATH, DEX_API_URL_FORMAT, DEX_SEARCH_URL_FORMAT,
+    DEX_API_JSON_PATH, DEX_DEFINITION_API_URL_FORMAT, DEX_WORD_OF_THE_DAY_URL, DEX_SEARCH_URL_FORMAT,
     DEX_THUMBNAIL_URL, DEX_SOURCES_URL, DEX_AUTHOR_URL,
     BOT_START_URL_FORMAT,
     WORD_REGEX,
     UNICODE_SUPERSCRIPTS, ELLIPSIS, DEFINITION_AND_FOOTER_SEPARATOR, MESSAGE_TITLE_LENGTH_LIMIT,
     PREVIOUS_PAGE_ICON, PREVIOUS_OVERLAP_PAGE_ICON, NEXT_PAGE_ICON, NEXT_OVERLAP_PAGE_ICON,
     LINKS_TOGGLE_ON_TEXT, LINKS_TOGGLE_OFF_TEXT,
-    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY
+    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
+    BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
+from database import User
 
 logger = logging.getLogger(__name__)
+ParsedDefinition = collections.namedtuple(
+    typename='ParsedDefinition',
+    field_names='index title html url'
+)
 
 
 def check_admin(bot, message, analytics, admin_user_id):
     analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
-    if not admin_user_id or message.from_user.id != admin_user_id:
+    if admin_user_id is None or message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
@@ -84,38 +92,231 @@ def send_no_results_message(bot, chat_id, message_id, query):
     )
 
 
-def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
+def get_raw_response(api_url):
+    api_request = requests.get(api_url)
+    api_final_url = api_request.url
+
+    if not api_final_url.endswith(DEX_API_JSON_PATH):
+        api_request = requests.get('{}{}'.format(api_final_url, DEX_API_JSON_PATH))
+
+    return api_request.json()
+
+
+def create_definition_url(raw_definition, url):
+    id = raw_definition['id']
+    url_escaped = url.replace(' ', '')
+
+    return '{}/{}'.format(url_escaped, id)
+
+
+def create_footer(raw_definition, definition_url):
+    source_name = raw_definition['sourceName']
+    author = raw_definition['userNick']
+
+    author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(author))
+
+    return (
+        '{}\n'
+        'sursa: <a href="{}">{}</a> '
+        'adăugată de: <a href="{}">{}</a>'
+    ).format(
+        definition_url, DEX_SOURCES_URL, source_name,
+        author_url, author
+    )
+
+
+def get_message_limit(footer):
+    message_limit = MAX_MESSAGE_LENGTH
+
+    message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
+    message_limit -= len(footer)
+    message_limit -= len(ELLIPSIS)
+
+    return message_limit
+
+
+def get_html(raw_definition):
+    html_rep = raw_definition['htmlRep']
+    fragments = html.fragments_fromstring(html_rep)
+    root = html.Element('root')
+
+    for fragment in fragments:
+        root.append(fragment)
+
+    return root
+
+
+def replace_superscripts(root, definition_url):
+    for sup in root.findall('sup'):
+        sup_text = sup.text_content()
+        superscript_text = get_superscript(sup_text)
+
+        if superscript_text:
+            sup.text = superscript_text
+        else:
+            logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
+
+
+def get_word_link(word, bot_name):
+    link = A(word)
+    link.set('href', BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
+
+    return html.tostring(link).decode()
+
+
+def clean_html_element(element):
+    etree.strip_tags(element, '*')
+
+    if element.tag not in ['b', 'i']:
+        element.tag = 'i'
+
+    # etree.strip_attributes(element, '*') should work too.
+    # See https://bugs.launchpad.net/lxml/+bug/1846267.
+    element.attrib.clear()
+
+
+def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name, prefix='', suffix=''):
+    definition_index = raw_definition.get('index', 'N/A')
+
+    definition_url = create_definition_url(
+        raw_definition=raw_definition,
+        url=url
+    )
+    footer = create_footer(
+        raw_definition=raw_definition,
+        definition_url=definition_url
+    )
+
+    message_limit = get_message_limit(footer)
+    root = get_html(raw_definition)
+
+    definition_title: str
+    definition_html_text = prefix
+    elements: collections.Iterator
+
+    replace_superscripts(
+        root=root,
+        definition_url=definition_url
+    )
+
+    if links_toggle:
+        etree.strip_tags(root, '*')
+
+        text = root.text
+
+        definition_title = text
+        elements = WORD_REGEX.finditer(text)
+    else:
+        definition_title = ''
+        elements = root.iterchildren()
+
+    definition_text_content = ''
+
+    for element in elements:
+        text_content = None
+        extra_text_content = None
+        html_text = None
+
+        if links_toggle:
+            word = element.group('word')
+            other = element.group('other')
+
+            if word is not None:
+                text_content = escape(word)
+                html_text = get_word_link(
+                    word=text_content,
+                    bot_name=bot_name
+                )
+
+            if other is not None:
+                extra_text_content = escape(other)
+        else:
+            clean_html_element(element)
+
+            text_content = element.text_content() + (element.tail or '')
+            html_text = html.tostring(element).decode()
+
+            definition_title += text_content
+
+        if text_content:
+            if len(definition_text_content) + len(text_content) + len(suffix) > message_limit:
+                definition_html_text += ELLIPSIS
+
+                break
+            else:
+                definition_html_text += html_text
+                definition_text_content += text_content
+
+        if extra_text_content:
+            definition_html_text += extra_text_content
+            definition_text_content += extra_text_content
+
+    if cli_args.debug:
+        definition_title = '{}: {}'.format(definition_index, definition_title)
+
+    definition_title = definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
+
+    if len(definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
+        definition_title = definition_title[:- len(ELLIPSIS)]
+        definition_title += ELLIPSIS
+
+    definition_html_text += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, footer)
+    definition_html_text += suffix
+
+    if cli_args.debug:
+        logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
+
+    return ParsedDefinition(
+        index=definition_index,
+        title=definition_title,
+        html=definition_html_text,
+        url=definition_url
+    )
+
+
+def get_inline_query_definition_result(parsed_definition, inline_keyboard_buttons):
+    reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+
+    return InlineQueryResultArticle(
+        id=uuid4(),
+        title=parsed_definition.title,
+        thumb_url=DEX_THUMBNAIL_URL,
+        url=parsed_definition.url,
+        hide_url=True,
+        reply_markup=reply_markup,
+        input_message_content=InputTextMessageContent(
+            message_text=parsed_definition.html,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
+    )
+
+
+def get_query_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
     user = get_user(update)
 
     if cli_args.fragment:
-        dex_url = 'debug'
+        url = 'debug'
 
-        dex_raw_definitions = [{
+        raw_definitions = [{
             'id': 0,
             'htmlRep': cli_args.fragment,
             'sourceName': None,
             'userNick': None
         }]
     else:
-        dex_api_url = DEX_API_URL_FORMAT.format(query)
-        dex_api_request = requests.get(dex_api_url)
+        api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
+        raw_response = get_raw_response(api_url)
 
-        dex_api_final_url = dex_api_request.url
+        raw_definitions = raw_response['definitions']
 
-        if not dex_api_final_url.endswith(DEX_API_JSON_PATH):
-            dex_api_request = requests.get('{}{}'.format(dex_api_final_url, DEX_API_JSON_PATH))
+        url = api_url[:- len(DEX_API_JSON_PATH)]
 
-        dex_raw_response = dex_api_request.json()
+    definitions_count = len(raw_definitions)
 
-        dex_raw_definitions = dex_raw_response['definitions']
-
-        dex_url = dex_api_url[:- len(DEX_API_JSON_PATH)]
-
-    definitions_count = len(dex_raw_definitions)
-
-    # set the index of the definitions
+    # Set the global index of the definitions.
     for index in range(definitions_count):
-        dex_raw_definitions[index]['index'] = index
+        raw_definitions[index]['index'] = index
 
     if cli_args.index is not None:
         if cli_args.index >= definitions_count:
@@ -123,7 +324,7 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
 
             return
 
-        dex_raw_definitions = [dex_raw_definitions[cli_args.index]]
+        raw_definitions = [raw_definitions[cli_args.index]]
 
     definitions = []
 
@@ -139,166 +340,80 @@ def get_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
         offset = int(offset_string)
 
         if offset < definitions_count:
-            dex_raw_definitions = dex_raw_definitions[offset + 1:]
+            raw_definitions = raw_definitions[offset + 1:]
     elif is_inline_query:
         analytics.track(AnalyticsType.INLINE_QUERY, user, query)
 
-    for dex_raw_definition in dex_raw_definitions:
-        dex_definition_index = dex_raw_definition['index']
-
-        dex_definition_id = dex_raw_definition['id']
-        dex_definition_source_name = dex_raw_definition['sourceName']
-        dex_definition_author = dex_raw_definition['userNick']
-        dex_definition_html_rep = dex_raw_definition['htmlRep']
-
-        # Footer
-
-        dex_definition_url = '{}/{}'.format(dex_url.replace(' ', ''), dex_definition_id)
-        dex_author_url = '{}/{}'.format(DEX_AUTHOR_URL, quote(dex_definition_author))
-
-        dex_definition_footer = (
-            '{}\n'
-            'sursa: <a href="{}">{}</a> '
-            'adăugată de: <a href="{}">{}</a>'
-        ).format(
-            dex_definition_url, DEX_SOURCES_URL, dex_definition_source_name,
-            dex_author_url, dex_definition_author
+    for raw_definition in raw_definitions:
+        parsed_definition = get_parsed_definition(
+            raw_definition=raw_definition,
+            url=url,
+            links_toggle=links_toggle,
+            cli_args=cli_args,
+            bot_name=bot_name
+        )
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, parsed_definition.index, links_toggle)
+        definition_result = get_inline_query_definition_result(
+            parsed_definition=parsed_definition,
+            inline_keyboard_buttons=inline_keyboard_buttons
         )
 
-        # Definition
-
-        message_limit = MAX_MESSAGE_LENGTH
-
-        message_limit -= len(DEFINITION_AND_FOOTER_SEPARATOR)
-        message_limit -= len(dex_definition_footer)
-        message_limit -= len(ELLIPSIS)
-
-        fragments = html.fragments_fromstring(dex_definition_html_rep)
-        root = html.Element('root')
-
-        for fragment in fragments:
-            root.append(fragment)
-
-        dex_definition_html = ''
-        dex_definition_title = ''
-
-        for sup in root.findall('sup'):
-            sup_text = sup.text_content()
-            superscript_text = get_superscript(sup_text)
-
-            if superscript_text:
-                sup.text = superscript_text
-            else:
-                logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, dex_definition_url))
-
-        if links_toggle:
-            etree.strip_tags(root, '*')
-
-            text = root.text
-
-            dex_definition_string = ''
-
-            for match in WORD_REGEX.finditer(text):
-                word = match.group('word')
-                other = match.group('other')
-
-                if word is not None:
-                    word = escape(word)
-
-                    link = A(word)
-
-                    link.set('href', BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
-
-                    link_text = html.tostring(link).decode()
-
-                    if len(dex_definition_string) + len(word) > message_limit:
-                        dex_definition_html += ELLIPSIS
-
-                        break
-                    else:
-                        dex_definition_html += link_text
-
-                        dex_definition_string += word
-
-                if other is not None:
-                    other = escape(other)
-
-                    dex_definition_html += other
-
-                    dex_definition_string += other
-
-            dex_definition_title = text
-        else:
-            dex_definition_string = ''
-
-            for element in root.iterchildren():
-                etree.strip_tags(element, '*')
-
-                if element.tag not in ['b', 'i']:
-                    element.tag = 'i'
-
-                # etree.strip_attributes(element, '*') should work too.
-                element.attrib.clear()
-
-                text = element.text_content() + (element.tail or '')
-
-                string = html.tostring(element).decode()
-
-                dex_definition_title += text
-
-                if len(dex_definition_string) + len(text) > message_limit:
-                    dex_definition_html += ELLIPSIS
-
-                    break
-                else:
-                    dex_definition_html += string
-
-                    dex_definition_string += text
-
-        if cli_args.debug:
-            dex_definition_title = '{}: {}'.format(dex_definition_index, dex_definition_title)
-
-        dex_definition_title = dex_definition_title[:MESSAGE_TITLE_LENGTH_LIMIT]
-
-        if len(dex_definition_title) >= MESSAGE_TITLE_LENGTH_LIMIT:
-            dex_definition_title = dex_definition_title[:- len(ELLIPSIS)]
-            dex_definition_title += ELLIPSIS
-
-        dex_definition_html += '{}{}'.format(DEFINITION_AND_FOOTER_SEPARATOR, dex_definition_footer)
-
-        if cli_args.debug:
-            logger.info('Result: {}: {}'.format(dex_definition_index, dex_definition_html))
-
-        inline_keyboard_buttons = get_inline_keyboard_buttons(query, definitions_count, dex_definition_index, links_toggle)
-
-        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
-
-        dex_definition_result = InlineQueryResultArticle(
-            id=uuid4(),
-            title=dex_definition_title,
-            thumb_url=DEX_THUMBNAIL_URL,
-            url=dex_definition_url,
-            hide_url=True,
-            reply_markup=reply_markup,
-            input_message_content=InputTextMessageContent(
-                message_text=dex_definition_html,
-                parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True
-            )
-        )
-
-        definitions.append(dex_definition_result)
+        definitions.append(definition_result)
 
     return definitions, offset
 
 
+def get_word_of_the_day_definition(links_toggle, cli_args, bot_name, with_stop=False):
+    timestamp = int(time.time())
+    api_url = DEX_WORD_OF_THE_DAY_URL.format(timestamp)
+    raw_response = get_raw_response(api_url)
+
+    day = raw_response['day']
+    month = raw_response['month']
+
+    raw_requested = raw_response['requested']
+    raw_record = raw_requested['record']
+
+    year = raw_record['year']
+    reason = raw_record['reason']
+    image_url = raw_record['image']
+
+    raw_definition = raw_record['definition']
+
+    url = api_url[:- len(DEX_API_JSON_PATH)]
+    prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
+    suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
+
+    parsed_definition = get_parsed_definition(
+        raw_definition=raw_definition,
+        url=url,
+        links_toggle=links_toggle,
+        cli_args=cli_args,
+        bot_name=bot_name,
+        prefix=prefix,
+        suffix=suffix
+    )
+    inline_keyboard_buttons = get_subscription_notification_inline_keyboard_buttons(
+        links_toggle=links_toggle,
+        with_stop=with_stop
+    )
+    definition_result = get_inline_query_definition_result(
+        parsed_definition=parsed_definition,
+        inline_keyboard_buttons=inline_keyboard_buttons
+    )
+
+    definition_result.url = image_url
+
+    return definition_result
+
+
 def clear_definitions_cache(query):
-    dex_api_url = DEX_API_URL_FORMAT.format(query)
+    api_url = DEX_DEFINITION_API_URL_FORMAT.format(query)
 
     cache = requests_cache.core.get_cache()
 
-    if cache.has_url(dex_api_url):
-        cache.delete_url(dex_api_url)
+    if cache.has_url(api_url):
+        cache.delete_url(api_url)
 
         return 'Cache successfully deleted for "{}"'.format(query)
     else:
@@ -311,7 +426,7 @@ def get_superscript(text):
     for letter in text:
         treated_letter = letter.lower().replace('[', '(').replace(']', ')')
 
-        if not treated_letter in UNICODE_SUPERSCRIPTS:
+        if treated_letter not in UNICODE_SUPERSCRIPTS:
             return None
 
         superscript += UNICODE_SUPERSCRIPTS[treated_letter]
@@ -319,7 +434,7 @@ def get_superscript(text):
     return superscript
 
 
-def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
+def get_definition_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
     buttons = []
 
     paging_buttons = []
@@ -389,6 +504,87 @@ def get_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
     buttons.append(links_toggle_buttons)
 
     return buttons
+
+
+def send_subscription_onboarding_message_if_needed(bot, user, chat_id):
+    db_user = User.get_or_none(User.telegram_id == user.id)
+
+    if db_user is None:
+        return
+
+    if db_user.subscription != User.Subscription.undetermined.value:
+        return
+
+    reply_markup = InlineKeyboardMarkup(get_subscription_onboarding_inline_keyboard_buttons())
+
+    bot.send_message(
+        chat_id=chat_id,
+        text='Vrei să primești cuvântul zilei?',
+        reply_markup=reply_markup
+    )
+
+
+def get_subscription_onboarding_inline_keyboard_buttons():
+    no_data = {
+        BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.denied.value
+    }
+
+    no_button = InlineKeyboardButton(
+        text='Nu',
+        callback_data=json.dumps(no_data)
+    )
+
+    yes_data = {
+        BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.accepted.value
+    }
+
+    yes_button = InlineKeyboardButton(
+        text='Da',
+        callback_data=json.dumps(yes_data)
+    )
+
+    return [[no_button, yes_button]]
+
+
+def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, with_stop=True):
+    links_toggle_data = {
+        BUTTON_DATA_LINKS_TOGGLE_KEY: not links_toggle,
+        BUTTON_DATA_SUBSCRIPTION_STATE_KEY: None
+    }
+
+    links_toggle_text = LINKS_TOGGLE_ON_TEXT if links_toggle else LINKS_TOGGLE_OFF_TEXT
+
+    links_toggle_button = InlineKeyboardButton(
+        text=links_toggle_text,
+        callback_data=json.dumps(links_toggle_data)
+    )
+
+    subscription_data: dict
+    subscription_text: str
+
+    if with_stop:
+        subscription_data = {
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle,
+            BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.revoked.value
+        }
+
+        subscription_text = 'Oprește'
+    else:
+        subscription_data = {
+            BUTTON_DATA_LINKS_TOGGLE_KEY: links_toggle,
+            BUTTON_DATA_SUBSCRIPTION_STATE_KEY: User.Subscription.accepted.value
+        }
+
+        subscription_text = 'Repornește'
+
+    subscription_button = InlineKeyboardButton(
+        text=subscription_text,
+        callback_data=json.dumps(subscription_data)
+    )
+
+    return [[links_toggle_button, subscription_button]]
 
 
 def base64_encode(string):
