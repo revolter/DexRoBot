@@ -30,6 +30,8 @@ BOT_START_URL_FORMAT = 'https://telegram.me/{}?start={}'
 WORD_REGEX = regex.compile(r'(?P<word>[\p{L}\p{M}\p{N}]+)|(?P<other>\P{L}+)')
 
 UNICODE_SUPERSCRIPTS = {
+    # Source: https://www.fileformat.info/info/unicode/block/superscripts_and_subscripts/list.htm.
+
     '0': '⁰',
     '1': '¹',
     '2': '²',
@@ -41,15 +43,17 @@ UNICODE_SUPERSCRIPTS = {
     '8': '⁸',
     '9': '⁹',
 
-    'i': 'ⁱ',
-    'n': 'ⁿ',
-
     '+': '⁺',
     '-': '⁻',
     '=': '⁼',
 
     '(': '⁽',
-    ')': '⁾'
+    ')': '⁾',
+
+    # Source: https://www.fileformat.info/info/unicode/category/Lm/list.htm.
+
+    'i': 'ⁱ',
+    'n': 'ⁿ'
 }
 
 ELLIPSIS = '…'
