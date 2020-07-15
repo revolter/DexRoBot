@@ -4,9 +4,17 @@
 
 Telegram Bot that uses [dexonline.ro](https://dexonline.ro)'s API to search Romanian words definitions. The bot currently runs as [@DexRoBot](https://t.me/DexRoBot).
 
-![Screenshot 1](images/screenshot_1.jpg)
-![Screenshot 2](images/screenshot_2.jpg)
-![Screenshot 3](images/screenshot_3.jpg)
+### Main functionality
+
+<img alt="Main screenshot 1" src="images/screenshot_main_1.png" width="276" height="320"><img alt="Main screenshot 2" src="images/screenshot_main_2.png" width="276" height="320"><img alt="Main screenshot 3" src="images/screenshot_main_3.png" width="276" height="320">
+
+### Toggle links feature
+
+<img alt="Toggle links screenshot 1" src="images/screenshot_links_1.png" width="276" height="288"><img alt="Toggle links screenshot 2" src="images/screenshot_links_2.png" width="276" height="288"><img alt="Toggle links screenshot 3" src="images/screenshot_links_3.png" width="276" height="288">
+
+### Word of the day feature
+
+<img alt="Word of the day screenshot" src="images/screenshot_wotd.png" width="414" height="681">
 
 ## Getting Started
 
