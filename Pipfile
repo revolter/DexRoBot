@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 lxml = "*"
+mypy = "*"
 peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "*"
