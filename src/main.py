@@ -186,7 +186,12 @@ def users_command_handler(update: Update, context: CallbackContext):
     if not check_admin(bot, message, analytics, ADMIN_USER_ID):
         return
 
-    bot.send_message(chat_id, User.get_users_table('updated' in context.args), parse_mode=ParseMode.MARKDOWN)
+    args = context.args
+
+    bot.send_message(chat_id, User.get_users_table(
+        sorted_by_updated_at='updated' in args,
+        include_only_subscribed='subscribed' in args
+    ), parse_mode=ParseMode.MARKDOWN)
 
 
 def clear_command_handler(update: Update, context: CallbackContext):

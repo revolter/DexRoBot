@@ -94,7 +94,7 @@ class User(BaseModel):
         return None
 
     @classmethod
-    def get_users_table(cls, sorted_by_updated_at=False):
+    def get_users_table(cls, sorted_by_updated_at=False, include_only_subscribed=False):
         users_table = ''
 
         try:
@@ -104,6 +104,9 @@ class User(BaseModel):
 
             if sorted_by_updated_at:
                 query = query.where(cls.created_at != cls.updated_at)
+
+            if include_only_subscribed:
+                query = query.where(cls.subscription == cls.Subscription.accepted.value)
 
             query = query.order_by(sort_field.desc()).limit(10)
 
