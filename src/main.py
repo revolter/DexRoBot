@@ -456,7 +456,9 @@ def word_of_the_day_job_handler(context: CallbackContext):
     definition_text = definition_content.message_text
     parse_mode = definition_content.parse_mode
 
-    for user in User.select().where(User.subscription == User.Subscription.accepted.value):
+    users = User.select().where(User.subscription == User.Subscription.accepted.value)
+
+    for user in users:
         id = user.telegram_id
 
         bot.queue_message(
@@ -473,6 +475,11 @@ def word_of_the_day_job_handler(context: CallbackContext):
             photo=image_url,
             disable_notification=True
         )
+
+    if ADMIN_USER_ID is not None:
+        sent_messages = len(users)
+
+        bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
 
 
 def error_handler(update: Update, context: CallbackContext):
