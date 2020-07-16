@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from html import escape
-from urllib.parse import quote
-from uuid import uuid4
-
 import base64
 import collections
 import json
 import logging
-import regex
 import time
+from html import escape
+from urllib.parse import quote
+from uuid import uuid4
 
+import regex
+import requests
+import requests_cache
 from lxml import etree, html
 from lxml.html.builder import A
-
 from telegram import (
     InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle,
     InputTextMessageContent, ParseMode
 )
 from telegram.constants import MAX_MESSAGE_LENGTH
-
-import requests
-import requests_cache
 
 from analytics import AnalyticsType
 from constants import (

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from enum import Enum
-
 import logging
-
-from telegram.ext.dispatcher import run_async
+from enum import Enum
 
 import requests
 import requests_cache
+from telegram.ext.dispatcher import run_async
 
 from constants import GOOGLE_ANALYTICS_BASE_URL
 

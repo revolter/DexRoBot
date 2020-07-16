@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from datetime import datetime
 from enum import Enum
 from uuid import uuid4
-
-import logging
 
 from peewee import (
     Model,
