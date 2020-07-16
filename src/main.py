@@ -618,6 +618,7 @@ if __name__ == '__main__':
             def __init__(self):
                 self.inline_query = None
 
+
         dummy_update = Dummy()
 
         dummy_update.inline_query = Dummy()

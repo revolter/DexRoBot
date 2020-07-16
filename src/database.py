@@ -124,6 +124,7 @@ class User(BaseModel):
 
         return users_table
 
+
 migrator = router.migrator
 
 migrator.create_table(User)
