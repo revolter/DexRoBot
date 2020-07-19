@@ -128,7 +128,7 @@ BUTTON_DATA_SUBSCRIPTION_STATE_KEY = 's'
 
 class LoggerFilter(logging.Filter):
     def __init__(self, level):
-        self.__level = level
+        self.level = level
 
     def filter(self, log_record):
-        return log_record.levelno <= self.__level
+        return log_record.levelno <= self.level

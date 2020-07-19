@@ -10,24 +10,6 @@ import os
 import sys
 from threading import Thread
 
-from constants import LOGS_FORMAT, LoggerFilter
-
-logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
-
-error_logging_handler = logging.FileHandler('errors.log')
-error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-error_logging_handler.setLevel(logging.ERROR)
-error_logging_handler.addFilter(LoggerFilter(logging.ERROR))
-
-logging.getLogger().addHandler(error_logging_handler)
-
-warning_logging_handler = logging.FileHandler('warnings.log')
-warning_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-warning_logging_handler.setLevel(logging.WARNING)
-warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
-
-logging.getLogger().addHandler(warning_logging_handler)
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode, Update
 from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
@@ -45,6 +27,7 @@ from constants import (
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
     BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
 )
+from custom_logger import configure_root_logger
 from database import User
 from queue_bot import QueueBot
 from queue_updater import QueueUpdater
@@ -56,12 +39,14 @@ from utils import (
     base64_encode, base64_decode
 )
 
+configure_root_logger()
+
+logger = logging.getLogger(__name__)
+
 BOT_NAME = None
 BOT_TOKEN = None
 
 ADMIN_USER_ID = None
-
-logger = logging.getLogger(__name__)
 
 updater: QueueUpdater = None
 analytics = None
