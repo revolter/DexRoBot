@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 from datetime import datetime, timedelta
 
 import regex
@@ -124,11 +123,3 @@ BUTTON_DATA_LINKS_TOGGLE_KEY = 'l'
 
 BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY = 'so'
 BUTTON_DATA_SUBSCRIPTION_STATE_KEY = 's'
-
-
-class LoggerFilter(logging.Filter):
-    def __init__(self, level):
-        self.level = level
-
-    def filter(self, log_record):
-        return log_record.levelno <= self.level
