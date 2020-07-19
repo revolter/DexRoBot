@@ -10,6 +10,7 @@ import os
 import sys
 from threading import Thread
 
+import requests_cache
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode, Update
 from telegram.constants import MAX_INLINE_QUERY_RESULTS
 from telegram.ext import (
@@ -18,8 +19,6 @@ from telegram.ext import (
     Filters
 )
 from telegram.utils.request import Request
-
-import requests_cache
 
 from analytics import Analytics, AnalyticsType
 from constants import (
