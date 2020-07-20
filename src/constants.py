@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+import datetime
 
 import regex
 
@@ -12,7 +12,7 @@ LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
 GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
 
-EPOCH_DATE = datetime(1970, 1, 1)
+EPOCH_DATE = datetime.datetime(1970, 1, 1)
 
 DEX_BASE_URL = 'https://dexonline.ro'
 
@@ -106,7 +106,7 @@ DEFINITION_AND_FOOTER_SEPARATOR = '\n\n'
 
 MESSAGE_TITLE_LENGTH_LIMIT = 50
 
-RESULTS_CACHE_TIME = timedelta(weeks=1)
+RESULTS_CACHE_TIME = datetime.timedelta(weeks=1)
 
 PREVIOUS_PAGE_ICON = '⬅'
 PREVIOUS_OVERLAP_PAGE_ICON = '↪'

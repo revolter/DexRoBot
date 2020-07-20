@@ -1,55 +1,51 @@
 # -*- coding: utf-8 -*-
 
+import datetime
+import enum
 import logging
 import typing
-from datetime import datetime
-from enum import Enum
-from uuid import uuid4
+import uuid
 
-from peewee import (
-    Model,
-    BigIntegerField, DateTimeField, IntegerField, TextField,
-    PeeweeException, SqliteDatabase
-)
-from peewee_migrate import Router
-from playhouse.sqlite_ext import RowIDField
+import peewee
+import peewee_migrate
+import playhouse.sqlite_ext
 
-from constants import GENERIC_DATE_TIME_FORMAT, EPOCH_DATE
+import constants
 
 logger = logging.getLogger(__name__)
 
-database = SqliteDatabase('dex.sqlite')
+database = peewee.SqliteDatabase('dex.sqlite')
 
 database.connect()
 
-router = Router(database, migrate_table='migration', logger=logger)
+router = peewee_migrate.Router(database, migrate_table='migration', logger=logger)
 
 
 def get_current_datetime():
-    return datetime.now().strftime(GENERIC_DATE_TIME_FORMAT)
+    return datetime.datetime.now().strftime(constants.GENERIC_DATE_TIME_FORMAT)
 
 
-class BaseModel(Model):
-    rowid = RowIDField()
+class BaseModel(peewee.Model):
+    rowid = playhouse.sqlite_ext.RowIDField()
 
-    created_at = DateTimeField(default=get_current_datetime)
-    updated_at = DateTimeField()
+    created_at = peewee.DateTimeField(default=get_current_datetime)
+    updated_at = peewee.DateTimeField()
 
     class Meta:
         database = database
 
 
 class User(BaseModel):
-    class Subscription(Enum):
+    class Subscription(enum.Enum):
         undetermined = 0
         accepted = 1
         denied = 2
         revoked = 3
 
-    id = TextField(unique=True, default=uuid4)
-    telegram_id = BigIntegerField(unique=True)
-    telegram_username = TextField(null=True)
-    subscription = IntegerField(default=0)
+    id = peewee.TextField(unique=True, default=uuid.uuid4)
+    telegram_id = peewee.BigIntegerField(unique=True)
+    telegram_username = peewee.TextField(null=True)
+    subscription = peewee.IntegerField(default=0)
 
     def get_markdown_description(self):
         username = '`@{}`'.format(self.telegram_username) if self.telegram_username else '-'
@@ -57,16 +53,16 @@ class User(BaseModel):
         return '{0.rowid}. | [{0.telegram_id}](tg://user?id={0.telegram_id}) | {1} | {2}'.format(self, username, User.Subscription(self.subscription).name)
 
     def get_created_at(self):
-        date = typing.cast(datetime, self.created_at)
+        date = typing.cast(datetime.datetime, self.created_at)
 
-        return date.strftime(GENERIC_DATE_TIME_FORMAT)
+        return date.strftime(constants.GENERIC_DATE_TIME_FORMAT)
 
     def get_updated_ago(self):
         if self.updated_at == self.created_at:
             return '-'
 
-        delta_seconds = round((datetime.now() - self.updated_at).total_seconds())
-        time_ago = str(datetime.fromtimestamp(delta_seconds) - EPOCH_DATE)
+        delta_seconds = round((datetime.datetime.now() - self.updated_at).total_seconds())
+        time_ago = str(datetime.datetime.fromtimestamp(delta_seconds) - constants.EPOCH_DATE)
 
         return '{} ago'.format(time_ago)
 
@@ -90,7 +86,7 @@ class User(BaseModel):
 
             if is_created:
                 return db_user
-        except PeeweeException as error:
+        except peewee.PeeweeException as error:
             logger.error('Database error: "{}" for id: {} and username: {}'.format(error, id, username))
 
         return None
@@ -119,7 +115,7 @@ class User(BaseModel):
                     user.get_created_at(),
                     user.get_updated_ago()
                 )
-        except PeeweeException:
+        except peewee.PeeweeException:
             pass
 
         if not users_table:

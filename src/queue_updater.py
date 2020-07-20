@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram.ext import Updater
+import telegram.ext
 
-from queue_bot import QueueBot
+import queue_bot
 
 
-class QueueUpdater(Updater):
-    def __init__(self, bot: QueueBot, *args, **kwargs):
+class QueueUpdater(telegram.ext.Updater):
+    def __init__(self, bot: queue_bot.QueueBot, *args, **kwargs):
         super().__init__(bot=bot, *args, **kwargs)
 
     def signal_handler(self, signum, frame):

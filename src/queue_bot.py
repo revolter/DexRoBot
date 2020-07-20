@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram.bot import Bot
-from telegram.ext import messagequeue
+import telegram
+import telegram.ext
 
 
-class QueueBot(Bot):
+class QueueBot(telegram.bot.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._is_messages_queued_default = True
-        self._msg_queue = messagequeue.MessageQueue()
+        self._msg_queue = telegram.ext.messagequeue.MessageQueue()
 
     def stop(self):
         try:
@@ -18,10 +18,10 @@ class QueueBot(Bot):
         except:
             pass
 
-    @messagequeue.queuedmessage
+    @telegram.ext.messagequeue.queuedmessage
     def queue_message(self, *args, **kwargs):
         return super().send_message(*args, **kwargs)
 
-    @messagequeue.queuedmessage
+    @telegram.ext.messagequeue.queuedmessage
     def queue_photo(self, *args, **kwargs):
         return super().send_photo(*args, **kwargs)
