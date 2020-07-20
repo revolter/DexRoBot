@@ -618,8 +618,8 @@ if __name__ == '__main__':
 
         inline_query_handler(dummy_update, None)
     else:
-        offset = datetime.timedelta(hours=2)
-        timezone = datetime.timezone(offset)
+        timezone_offset = datetime.timedelta(hours=2)
+        timezone = datetime.timezone(timezone_offset)
         time = datetime.time(
             hour=12,
             minute=0,
