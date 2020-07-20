@@ -47,7 +47,7 @@ BOT_TOKEN = None
 
 ADMIN_USER_ID = None
 
-updater: QueueUpdater = None
+updater: QueueUpdater
 analytics = None
 
 
