@@ -48,7 +48,7 @@ BOT_TOKEN = None
 ADMIN_USER_ID = None
 
 updater: QueueUpdater
-analytics = None
+analytics: Analytics
 
 
 def stop_and_restart():
