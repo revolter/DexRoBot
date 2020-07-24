@@ -20,7 +20,7 @@ from telegram.ext import (
 )
 from telegram.utils.request import Request
 
-from analytics import Analytics, AnalyticsType
+from analytics import AnalyticsHandler, AnalyticsType
 from constants import (
     RESULTS_CACHE_TIME,
     BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
@@ -48,7 +48,7 @@ BOT_TOKEN = None
 ADMIN_USER_ID = None
 
 updater: QueueUpdater
-analytics: Analytics
+analytics_handler: AnalyticsHandler
 
 
 def stop_and_restart():
@@ -80,16 +80,16 @@ def start_command_handler(update: Update, context: CallbackContext):
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
+    analytics_handler.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
     if query:
         bot.send_chat_action(chat_id, ChatAction.TYPING)
 
-        analytics.track(AnalyticsType.MESSAGE, user, query)
+        analytics_handler.track(AnalyticsType.MESSAGE, user, query)
 
         links_toggle = False
 
-        (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
             send_no_results_message(bot, chat_id, message_id, query)
@@ -137,7 +137,7 @@ def restart_command_handler(update: Update, context: CallbackContext):
     message = update.message
     bot = context.bot
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -151,7 +151,7 @@ def logs_command_handler(update: Update, context: CallbackContext):
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -166,7 +166,7 @@ def users_command_handler(update: Update, context: CallbackContext):
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     args = context.args
@@ -183,7 +183,7 @@ def clear_command_handler(update: Update, context: CallbackContext):
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     for query in context.args:
@@ -207,7 +207,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
             query = inline_query.query
 
         if not query:
-            analytics.track(AnalyticsType.EMPTY_QUERY, user, None)
+            analytics_handler.track(AnalyticsType.EMPTY_QUERY, user, None)
 
             return
 
@@ -234,7 +234,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     definitions_count = len(definitions)
 
@@ -283,11 +283,11 @@ def message_handler(update: Update, context: CallbackContext):
 
     bot.send_chat_action(chat_id, ChatAction.TYPING)
 
-    analytics.track(AnalyticsType.MESSAGE, user, query)
+    analytics_handler.track(AnalyticsType.MESSAGE, user, query)
 
     links_toggle = False
 
-    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
         send_no_results_message(bot, chat_id, message_id, query)
@@ -398,7 +398,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
         query = callback_data[BUTTON_DATA_QUERY_KEY]
         offset = callback_data[BUTTON_DATA_OFFSET_KEY]
 
-        (definitions, _) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, _) = get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
@@ -586,14 +586,14 @@ if __name__ == '__main__':
         use_context=True
     )
     job_queue = updater.job_queue
-    analytics = Analytics()
+    analytics_handler = AnalyticsHandler()
 
     try:
-        analytics.googleToken = config.get('Google', 'Key')
+        analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
 
-    analytics.userAgent = BOT_NAME
+    analytics_handler.userAgent = BOT_NAME
 
     requests_cache.install_cache(expire_after=RESULTS_CACHE_TIME)
 

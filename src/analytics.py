@@ -19,7 +19,7 @@ class AnalyticsType(Enum):
     MESSAGE = 'message'
 
 
-class Analytics:
+class AnalyticsHandler:
     def __init__(self):
         self.googleToken = None
         self.userAgent = None

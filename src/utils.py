@@ -42,8 +42,8 @@ ParsedDefinition = collections.namedtuple(
 )
 
 
-def check_admin(bot, message, analytics, admin_user_id):
-    analytics.track(AnalyticsType.COMMAND, message.from_user, message.text)
+def check_admin(bot, message, analytics_handler, admin_user_id):
+    analytics_handler.track(AnalyticsType.COMMAND, message.from_user, message.text)
 
     if admin_user_id is None or message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
@@ -291,7 +291,7 @@ def get_inline_query_definition_result(parsed_definition, inline_keyboard_button
     )
 
 
-def get_query_definitions(update, query, links_toggle, analytics, cli_args, bot_name):
+def get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, bot_name):
     user = get_user(update)
 
     if cli_args.fragment:
@@ -341,7 +341,7 @@ def get_query_definitions(update, query, links_toggle, analytics, cli_args, bot_
         if offset < definitions_count:
             raw_definitions = raw_definitions[offset + 1:]
     elif is_inline_query:
-        analytics.track(AnalyticsType.INLINE_QUERY, user, query)
+        analytics_handler.track(AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
         parsed_definition = get_parsed_definition(
