@@ -130,7 +130,10 @@ def get_word_link(word: str, bot_name: str) -> str:
     link = lxml.html.builder.A(word)
     link.set('href', constants.BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
 
-    return lxml.html.tostring(link).decode()
+    return lxml.html.tostring(
+        doc=link,
+        encoding='unicode'
+    )
 
 
 def clean_html_element(element: lxml.html.HtmlElement) -> None:
