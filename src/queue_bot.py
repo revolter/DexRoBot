@@ -5,12 +5,12 @@ import telegram
 import telegram.ext
 
 
-class QueueBot(telegram.bot.Bot):
+class QueueBot(telegram.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._is_messages_queued_default = True
-        self._msg_queue = telegram.ext.messagequeue.MessageQueue()
+        self._msg_queue = telegram.ext.MessageQueue()
 
     def stop(self):
         try:
