@@ -39,24 +39,6 @@ def check_admin(bot, message, analytics_handler, admin_user_id):
     return True
 
 
-def get_user(update):
-    try:
-        user = update.message.from_user
-    except (NameError, AttributeError):
-        try:
-            user = update.inline_query.from_user
-        except (NameError, AttributeError):
-            try:
-                user = update.chosen_inline_result.from_user
-            except (NameError, AttributeError):
-                try:
-                    user = update.callback_query.from_user
-                except (NameError, AttributeError):
-                    return None
-
-    return user
-
-
 def get_no_results_message(query):
     url = constants.DEX_SEARCH_URL_FORMAT.format(urllib.parse.quote(query))
 
@@ -278,7 +260,7 @@ def get_inline_query_definition_result(parsed_definition, inline_keyboard_button
 
 
 def get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, bot_name):
-    user = get_user(update)
+    user = update.effective_user
 
     if cli_args.fragment:
         url = 'debug'
