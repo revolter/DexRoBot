@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import queue
+
 import telegram
 import telegram.ext
 
@@ -15,7 +17,7 @@ class QueueBot(telegram.Bot):
     def stop(self) -> None:
         try:
             self._msg_queue.stop()
-        except:
+        except (queue.Full, RuntimeError, ValueError):
             pass
 
     @telegram.ext.messagequeue.queuedmessage

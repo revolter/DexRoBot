@@ -61,7 +61,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     try:
         query = utils.base64_decode(query)
-    except:
+    except UnicodeDecodeError:
         pass
 
     create_or_update_user(bot, user)
@@ -142,7 +142,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
     try:
         bot.send_document(chat_id, open('errors.log', 'rb'))
-    except:
+    except telegram.TelegramError:
         bot.send_message(chat_id, 'Log is empty')
 
 
