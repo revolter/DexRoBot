@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import argparse
 import base64
 import collections
 import html
 import json
 import logging
 import time
+import typing
 import urllib.parse
 import uuid
 
@@ -28,10 +30,10 @@ ParsedDefinition = collections.namedtuple(
 )
 
 
-def check_admin(bot, message, analytics_handler, admin_user_id):
+def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
     analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
 
-    if admin_user_id is None or message.from_user.id != admin_user_id:
+    if message.from_user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
@@ -39,7 +41,7 @@ def check_admin(bot, message, analytics_handler, admin_user_id):
     return True
 
 
-def get_no_results_message(query):
+def get_no_results_message(query: str) -> str:
     url = constants.DEX_SEARCH_URL_FORMAT.format(urllib.parse.quote(query))
 
     message = (
@@ -50,7 +52,7 @@ def get_no_results_message(query):
     return message
 
 
-def send_no_results_message(bot, chat_id, message_id, query):
+def send_no_results_message(bot: telegram.Bot, chat_id: int, message_id: int, query: str) -> None:
     bot.send_message(
         chat_id, get_no_results_message(query),
         parse_mode=telegram.ParseMode.MARKDOWN,
@@ -59,7 +61,7 @@ def send_no_results_message(bot, chat_id, message_id, query):
     )
 
 
-def get_raw_response(api_url):
+def get_raw_response(api_url: str) -> typing.Dict[str, typing.Any]:
     api_request = requests.get(api_url)
     api_final_url = api_request.url
 
@@ -69,14 +71,14 @@ def get_raw_response(api_url):
     return api_request.json()
 
 
-def create_definition_url(raw_definition, url):
+def create_definition_url(raw_definition: typing.Dict[str, typing.Any], url: str) -> str:
     id = raw_definition['id']
     url_escaped = url.replace(' ', '')
 
     return '{}/{}'.format(url_escaped, id)
 
 
-def create_footer(raw_definition, definition_url):
+def create_footer(raw_definition: typing.Dict[str, typing.Any], definition_url: str) -> str:
     source_name = raw_definition['sourceName']
     author = raw_definition['userNick']
 
@@ -92,7 +94,7 @@ def create_footer(raw_definition, definition_url):
     )
 
 
-def get_message_limit(footer):
+def get_message_limit(footer: str) -> int:
     message_limit = telegram.constants.MAX_MESSAGE_LENGTH
 
     message_limit -= len(constants.DEFINITION_AND_FOOTER_SEPARATOR)
@@ -102,7 +104,7 @@ def get_message_limit(footer):
     return message_limit
 
 
-def get_html(raw_definition):
+def get_html(raw_definition: typing.Dict[str, typing.Any]) -> lxml.html.HtmlElement:
     html_rep = raw_definition['htmlRep']
     fragments = lxml.html.fragments_fromstring(html_rep)
     root = lxml.html.Element('root')
@@ -113,7 +115,7 @@ def get_html(raw_definition):
     return root
 
 
-def replace_superscripts(root, definition_url):
+def replace_superscripts(root: lxml.html.HtmlElement, definition_url: str) -> None:
     for sup in root.findall('sup'):
         sup_text = sup.text_content()
         superscript_text = get_superscript(sup_text)
@@ -124,14 +126,14 @@ def replace_superscripts(root, definition_url):
             logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
 
 
-def get_word_link(word, bot_name):
+def get_word_link(word: str, bot_name: str) -> str:
     link = lxml.html.builder.A(word)
     link.set('href', constants.BOT_START_URL_FORMAT.format(bot_name, base64_encode(word)))
 
     return lxml.html.tostring(link).decode()
 
 
-def clean_html_element(element):
+def clean_html_element(element: lxml.html.HtmlElement) -> None:
     lxml.etree.strip_tags(element, '*')
 
     if element.tag not in ['b', 'i']:
@@ -142,7 +144,7 @@ def clean_html_element(element):
     element.attrib.clear()
 
 
-def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name, prefix='', suffix=''):
+def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str, links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, prefix='', suffix='') -> ParsedDefinition:
     definition_index = raw_definition.get('index', 'N/A')
 
     definition_url = create_definition_url(
@@ -241,7 +243,7 @@ def get_parsed_definition(raw_definition, url, links_toggle, cli_args, bot_name,
     )
 
 
-def get_inline_query_definition_result(parsed_definition, inline_keyboard_buttons):
+def get_inline_query_definition_result(parsed_definition: ParsedDefinition, inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]) -> telegram.InlineQueryResultArticle:
     reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
     return telegram.InlineQueryResultArticle(
@@ -259,7 +261,7 @@ def get_inline_query_definition_result(parsed_definition, inline_keyboard_button
     )
 
 
-def get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, bot_name):
+def get_query_definitions(update: telegram.Update, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[telegram.InlineQueryResultArticle], int]:
     user = update.effective_user
 
     if cli_args.fragment:
@@ -285,15 +287,15 @@ def get_query_definitions(update, query, links_toggle, analytics_handler, cli_ar
     for index in range(definitions_count):
         raw_definitions[index]['index'] = index
 
+    definitions: typing.List[telegram.InlineQueryResultArticle] = []
+
     if cli_args.index is not None:
         if cli_args.index >= definitions_count:
             logger.warning('Index out of bounds')
 
-            return
+            return definitions, 0
 
         raw_definitions = [raw_definitions[cli_args.index]]
-
-    definitions = []
 
     offset_string = None
     offset = 0
@@ -330,7 +332,7 @@ def get_query_definitions(update, query, links_toggle, analytics_handler, cli_ar
     return definitions, offset
 
 
-def get_word_of_the_day_definition(links_toggle, cli_args, bot_name, with_stop=False):
+def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> telegram.InlineQueryResultArticle:
     timestamp = int(time.time())
     api_url = constants.DEX_WORD_OF_THE_DAY_URL.format(timestamp)
     raw_response = get_raw_response(api_url)
@@ -378,7 +380,7 @@ def get_word_of_the_day_definition(links_toggle, cli_args, bot_name, with_stop=F
     return definition_result
 
 
-def clear_definitions_cache(query):
+def clear_definitions_cache(query: str) -> str:
     api_url = constants.DEX_DEFINITION_API_URL_FORMAT.format(query)
 
     cache = requests_cache.core.get_cache()
@@ -391,7 +393,7 @@ def clear_definitions_cache(query):
         return 'No cache for "{}"'.format(query)
 
 
-def get_superscript(text):
+def get_superscript(text: str) -> typing.Optional[str]:
     superscript = ''
 
     for letter in text:
@@ -405,11 +407,11 @@ def get_superscript(text):
     return superscript
 
 
-def get_definition_inline_keyboard_buttons(query, definitions_count, offset, links_toggle):
-    buttons = []
+def get_definition_inline_keyboard_buttons(query: typing.Optional[str], definitions_count: int, offset: int, links_toggle: bool) -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
+    buttons: typing.List[typing.List[telegram.InlineKeyboardButton]] = []
 
-    paging_buttons = []
-    links_toggle_buttons = []
+    paging_buttons: typing.List[telegram.InlineKeyboardButton] = []
+    links_toggle_buttons: typing.List[telegram.InlineKeyboardButton] = []
 
     if definitions_count > 1:
         is_first_page = offset == 0
@@ -477,7 +479,7 @@ def get_definition_inline_keyboard_buttons(query, definitions_count, offset, lin
     return buttons
 
 
-def send_subscription_onboarding_message_if_needed(bot, user, chat_id):
+def send_subscription_onboarding_message_if_needed(bot: telegram.Bot, user: database.User, chat_id: int) -> None:
     db_user = database.User.get_or_none(database.User.telegram_id == user.id)
 
     if db_user is None:
@@ -495,7 +497,7 @@ def send_subscription_onboarding_message_if_needed(bot, user, chat_id):
     )
 
 
-def get_subscription_onboarding_inline_keyboard_buttons():
+def get_subscription_onboarding_inline_keyboard_buttons() -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
     no_data = {
         constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,
         constants.BUTTON_DATA_SUBSCRIPTION_STATE_KEY: database.User.Subscription.denied.value
@@ -519,7 +521,7 @@ def get_subscription_onboarding_inline_keyboard_buttons():
     return [[no_button, yes_button]]
 
 
-def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, with_stop=True):
+def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, with_stop=True) -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
     links_toggle_data = {
         constants.BUTTON_DATA_LINKS_TOGGLE_KEY: not links_toggle,
         constants.BUTTON_DATA_SUBSCRIPTION_STATE_KEY: None
@@ -532,7 +534,7 @@ def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, wi
         callback_data=json.dumps(links_toggle_data)
     )
 
-    subscription_data: dict
+    subscription_data: typing.Dict[str, typing.Any]
     subscription_text: str
 
     if with_stop:
@@ -558,7 +560,7 @@ def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, wi
     return [[links_toggle_button, subscription_button]]
 
 
-def base64_encode(string):
+def base64_encode(string: str) -> str:
     """
     Removes any `=` used as padding from the encoded string.
     Copied from https://gist.github.com/cameronmaske/f520903ade824e4c30ab.
@@ -569,7 +571,7 @@ def base64_encode(string):
     return encoded.decode().rstrip('=')
 
 
-def base64_decode(string):
+def base64_decode(string: str) -> str:
     """
     Adds back in the required padding before decoding.
     Copied from https://gist.github.com/cameronmaske/f520903ade824e4c30ab.

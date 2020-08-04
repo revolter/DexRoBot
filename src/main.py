@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 import threading
+import typing
 
 import requests_cache
 import telegram
@@ -27,24 +28,24 @@ custom_logger.configure_root_logger()
 
 logger = logging.getLogger(__name__)
 
-BOT_NAME = None
-BOT_TOKEN = None
+BOT_NAME: str
+BOT_TOKEN: str
 
-ADMIN_USER_ID = None
+ADMIN_USER_ID: int
 
 updater: queue_updater.QueueUpdater
 analytics_handler: analytics.AnalyticsHandler
 
 
-def stop_and_restart():
+def stop_and_restart() -> None:
     updater.stop()
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-def create_or_update_user(bot, user):
+def create_or_update_user(bot: queue_bot.QueueBot, user: database.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
-    if db_user is not None and ADMIN_USER_ID is not None:
+    if db_user is not None:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
@@ -84,7 +85,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
             reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
             definition = definitions[offset]
-            definition_content = definition.input_message_content
+            definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
             definition_text = definition_content.message_text
 
             bot.send_message(
@@ -228,7 +229,7 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
 
     if definitions_count == 0:
         no_results_text = 'Niciun rezultat'
-        no_results_parameter = utils.base64_encode(query)
+        no_results_parameter = utils.base64_encode(query) if query is not None else ''
     else:
         definitions = definitions[:telegram.constants.MAX_INLINE_QUERY_RESULTS]
 
@@ -282,7 +283,7 @@ def message_handler(update: telegram.Update, context: telegram.ext.CallbackConte
         reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition = definitions[offset]
-        definition_content = definition.input_message_content
+        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
         definition_text = definition_content.message_text
 
         bot.send_message(
@@ -347,7 +348,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                 reply_markup = definition.reply_markup
 
-                definition_content = definition.input_message_content
+                definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
                 definition_text = definition_content.message_text
                 parse_mode = definition_content.parse_mode
 
@@ -380,7 +381,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                     callback_query.edit_message_reply_markup(reply_markup)
 
     else:
-        query = callback_data[constants.BUTTON_DATA_QUERY_KEY]
+        query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
         offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
 
         (definitions, _) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
@@ -390,7 +391,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
         reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition = definitions[offset]
-        definition_content = definition.input_message_content
+        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
         definition_text = definition_content.message_text
 
         if is_inline:
@@ -425,7 +426,7 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext):
     reply_markup = definition.reply_markup
     image_url = definition.url
 
-    definition_content = definition.input_message_content
+    definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
     definition_text = definition_content.message_text
     parse_mode = definition_content.parse_mode
 
@@ -449,17 +450,16 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext):
             disable_notification=True
         )
 
-    if ADMIN_USER_ID is not None:
-        sent_messages = len(users)
+    sent_messages = len(users)
 
-        bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
+    bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
 
 
 def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
-def main():
+def main() -> None:
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(telegram.ext.CommandHandler('start', start_command_handler, pass_args=True))
@@ -474,13 +474,13 @@ def main():
     dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text, message_handler))
     dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
 
-    dispatcher.add_error_handler(error_handler)
-
     if cli_args.debug:
         logger.info('Started polling')
 
         updater.start_polling(timeout=0.01)
     else:
+        dispatcher.add_error_handler(error_handler)
+
         if cli_args.server and not cli_args.polling:
             logger.info('Started webhook')
 
@@ -516,9 +516,7 @@ def main():
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
-    if ADMIN_USER_ID is not None:
-        updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
-
+    updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
     updater.idle()
 
 
@@ -583,25 +581,24 @@ if __name__ == '__main__':
     requests_cache.install_cache(expire_after=constants.RESULTS_CACHE_TIME)
 
     if cli_args.query or cli_args.fragment:
-        class Dummy:
-            def __init__(self):
-                self.inline_query = None
+        dummy_inline_query = telegram.InlineQuery(
+            id=0,
+            from_user=telegram.User(
+                id=0,
+                first_name='Dummy',
+                is_bot=False
+            ),
+            query=None,
+            offset=None
+        )
+        dummy_inline_query.answer = (lambda *args, **kwargs: None)
 
+        dummy_update = telegram.Update(0)
+        dummy_update.inline_query = dummy_inline_query
 
-        dummy_update = Dummy()
+        dummy_context = telegram.ext.CallbackContext(updater.dispatcher)
 
-        dummy_update.inline_query = Dummy()
-
-        dummy_update.inline_query.from_user = Dummy()
-        dummy_update.inline_query.offset = None
-        dummy_update.inline_query.answer = (lambda *args, **kwargs: None)
-
-        dummy_update.inline_query.from_user.id = None
-        dummy_update.inline_query.from_user.first_name = None
-        dummy_update.inline_query.from_user.last_name = None
-        dummy_update.inline_query.from_user.username = None
-
-        inline_query_handler(dummy_update, None)
+        inline_query_handler(dummy_update, dummy_context)
     else:
         timezone_offset = datetime.timedelta(hours=2)
         timezone = datetime.timezone(timezone_offset)
