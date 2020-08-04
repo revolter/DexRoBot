@@ -581,6 +581,6 @@ def base64_decode(string: str) -> str:
     """
 
     padding = 4 - (len(string) % 4)
-    string = string + ('=' * padding)
+    string += '=' * padding
 
     return base64.urlsafe_b64decode(string).decode('utf-8')
