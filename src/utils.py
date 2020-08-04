@@ -22,12 +22,9 @@ import telegram
 import analytics
 import constants
 import database
+import parsed_definition
 
 logger = logging.getLogger(__name__)
-ParsedDefinition = collections.namedtuple(
-    typename='ParsedDefinition',
-    field_names='index title html url'
-)
 
 
 def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
@@ -147,7 +144,7 @@ def clean_html_element(element: lxml.html.HtmlElement) -> None:
     element.attrib.clear()
 
 
-def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str, links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, prefix='', suffix='') -> ParsedDefinition:
+def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str, links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, prefix='', suffix='') -> parsed_definition.ParsedDefinition:
     definition_index = raw_definition.get('index', 'N/A')
 
     definition_url = create_definition_url(
@@ -238,7 +235,7 @@ def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str
     if cli_args.debug:
         logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
 
-    return ParsedDefinition(
+    return parsed_definition.ParsedDefinition(
         index=definition_index,
         title=definition_title,
         html=definition_html_text,
@@ -246,18 +243,18 @@ def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str
     )
 
 
-def get_inline_query_definition_result(parsed_definition: ParsedDefinition, inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]) -> telegram.InlineQueryResultArticle:
+def get_inline_query_definition_result(definition: parsed_definition.ParsedDefinition, inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]) -> telegram.InlineQueryResultArticle:
     reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
     return telegram.InlineQueryResultArticle(
         id=uuid.uuid4(),
-        title=parsed_definition.title,
+        title=definition.title,
         thumb_url=constants.DEX_THUMBNAIL_URL,
-        url=parsed_definition.url,
+        url=definition.url,
         hide_url=True,
         reply_markup=reply_markup,
         input_message_content=telegram.InputTextMessageContent(
-            message_text=parsed_definition.html,
+            message_text=definition.html,
             parse_mode=telegram.ParseMode.HTML,
             disable_web_page_preview=True
         )
@@ -317,16 +314,16 @@ def get_query_definitions(update: telegram.Update, query: typing.Optional[str], 
         analytics_handler.track(analytics.AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
-        parsed_definition = get_parsed_definition(
+        definition = get_parsed_definition(
             raw_definition=raw_definition,
             url=url,
             links_toggle=links_toggle,
             cli_args=cli_args,
             bot_name=bot_name
         )
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, parsed_definition.index, links_toggle)
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, definition.index, links_toggle)
         definition_result = get_inline_query_definition_result(
-            parsed_definition=parsed_definition,
+            definition=definition,
             inline_keyboard_buttons=inline_keyboard_buttons
         )
 
@@ -360,7 +357,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
     suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
 
-    parsed_definition = get_parsed_definition(
+    definition = get_parsed_definition(
         raw_definition=raw_definition,
         url=url,
         links_toggle=links_toggle,
@@ -374,7 +371,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
         with_stop=with_stop
     )
     definition_result = get_inline_query_definition_result(
-        parsed_definition=parsed_definition,
+        definition=definition,
         inline_keyboard_buttons=inline_keyboard_buttons
     )
 

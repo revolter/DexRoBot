@@ -33,6 +33,7 @@ env.source_filenames = [
     'analytics.py',
     'constants.py',
 
+    'parsed_definition.py',
     'queue_bot.py',
     'queue_updater.py',
 
