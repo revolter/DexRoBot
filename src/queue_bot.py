@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram.bot import Bot
-from telegram.ext import messagequeue
+import queue
+
+import telegram
+import telegram.ext
 
 
-class QueueBot(Bot):
-    def __init__(self, *args, **kwargs):
+class QueueBot(telegram.Bot):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self._is_messages_queued_default = True
-        self._msg_queue = messagequeue.MessageQueue()
+        self._msg_queue = telegram.ext.MessageQueue()
 
-    def stop(self):
+    def stop(self) -> None:
         try:
             self._msg_queue.stop()
-        except:
+        except (queue.Full, RuntimeError, ValueError):
             pass
 
-    @messagequeue.queuedmessage
-    def queue_message(self, *args, **kwargs):
+    @telegram.ext.messagequeue.queuedmessage
+    def queue_message(self, *args, **kwargs) -> telegram.Message:
         return super().send_message(*args, **kwargs)
 
-    @messagequeue.queuedmessage
-    def queue_photo(self, *args, **kwargs):
+    @telegram.ext.messagequeue.queuedmessage
+    def queue_photo(self, *args, **kwargs) -> telegram.Message:
         return super().send_photo(*args, **kwargs)

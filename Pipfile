@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 lxml = "*"
+mypy = "*"
 peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "*"
@@ -14,6 +15,7 @@ requests-cache = "*"
 
 [dev-packages]
 fabric = "*"
+invocations = "*"
 
 [requires]
 python_version = "3.7"

@@ -1,11 +1,14 @@
-from peewee import IntegerField
+import typing
+
+import peewee
+import peewee_migrate
 
 
-def migrate(migrator, database, fake=False, **kwargs):
+def migrate(migrator: peewee_migrate.Migrator, _database: peewee.Database, fake=False, **_kwargs: typing.Any) -> None:
     if fake is True:
         return
 
-    subscription = IntegerField(default=0)
+    subscription = peewee.IntegerField(default=0)
 
     migrator.add_columns(
         model='user',

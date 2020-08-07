@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from telegram.ext import Updater
+import types
 
-from queue_bot import QueueBot
+import telegram.ext
+
+import queue_bot
 
 
-class QueueUpdater(Updater):
-    def __init__(self, bot: QueueBot, *args, **kwargs):
+class QueueUpdater(telegram.ext.Updater):
+    def __init__(self, bot: queue_bot.QueueBot, *args, **kwargs):
         super().__init__(bot=bot, *args, **kwargs)
 
-    def signal_handler(self, signum, frame):
+    def signal_handler(self, signum: int, frame: types.FrameType) -> None:
         super().signal_handler(signum, frame)
 
         self.bot.stop()

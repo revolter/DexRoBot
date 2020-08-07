@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from threading import Thread
-
 import argparse
 import configparser
 import datetime
@@ -10,77 +8,48 @@ import json
 import logging
 import os
 import sys
-
-from constants import LOGS_FORMAT, LoggerFilter
-
-logging.basicConfig(format=LOGS_FORMAT, level=logging.INFO)
-
-error_logging_handler = logging.FileHandler('errors.log')
-error_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-error_logging_handler.setLevel(logging.ERROR)
-error_logging_handler.addFilter(LoggerFilter(logging.ERROR))
-
-logging.getLogger().addHandler(error_logging_handler)
-
-warning_logging_handler = logging.FileHandler('warnings.log')
-warning_logging_handler.setFormatter(logging.Formatter(LOGS_FORMAT))
-warning_logging_handler.setLevel(logging.WARNING)
-warning_logging_handler.addFilter(LoggerFilter(logging.WARNING))
-
-logging.getLogger().addHandler(warning_logging_handler)
-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ParseMode, Update
-from telegram.constants import MAX_INLINE_QUERY_RESULTS
-from telegram.ext import (
-    CallbackContext, CallbackQueryHandler,
-    CommandHandler, InlineQueryHandler, MessageHandler,
-    Filters
-)
-from telegram.utils.request import Request
+import threading
+import typing
 
 import requests_cache
+import telegram
+import telegram.ext
+import telegram.utils.request
 
-from analytics import Analytics, AnalyticsType
-from constants import (
-    RESULTS_CACHE_TIME,
-    BUTTON_DATA_QUERY_KEY, BUTTON_DATA_OFFSET_KEY, BUTTON_DATA_LINKS_TOGGLE_KEY,
-    BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY, BUTTON_DATA_SUBSCRIPTION_STATE_KEY
-)
-from database import User
-from queue_bot import QueueBot
-from queue_updater import QueueUpdater
-from utils import (
-    check_admin, send_no_results_message,
-    get_query_definitions, get_word_of_the_day_definition, clear_definitions_cache,
-    get_definition_inline_keyboard_buttons,
-    send_subscription_onboarding_message_if_needed, get_subscription_notification_inline_keyboard_buttons,
-    base64_encode, base64_decode
-)
+import analytics
+import constants
+import custom_logger
+import database
+import queue_bot
+import queue_updater
+import utils
 
-BOT_NAME = None
-BOT_TOKEN = None
-
-ADMIN_USER_ID = None
+custom_logger.configure_root_logger()
 
 logger = logging.getLogger(__name__)
 
-updater: QueueUpdater = None
-analytics = None
+BOT_NAME: str
+BOT_TOKEN: str
+
+ADMIN_USER_ID: int
+
+updater: queue_updater.QueueUpdater
+analytics_handler: analytics.AnalyticsHandler
 
 
-def stop_and_restart():
+def stop_and_restart() -> None:
     updater.stop()
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-def create_or_update_user(bot, user):
-    db_user = User.create_or_update_user(user.id, user.username)
+def create_or_update_user(bot: queue_bot.QueueBot, user: database.User) -> None:
+    db_user = database.User.create_or_update_user(user.id, user.username)
 
-    if db_user is not None and ADMIN_USER_ID is not None:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=ParseMode.MARKDOWN)
+    if db_user is not None:
+        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def start_command_handler(update: Update, context: CallbackContext):
+def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
@@ -91,32 +60,32 @@ def start_command_handler(update: Update, context: CallbackContext):
     query = ' '.join(context.args)
 
     try:
-        query = base64_decode(query)
-    except:
+        query = utils.base64_decode(query)
+    except UnicodeDecodeError:
         pass
 
     create_or_update_user(bot, user)
 
-    analytics.track(AnalyticsType.COMMAND, user, '/start {}'.format(query))
+    analytics_handler.track(analytics.AnalyticsType.COMMAND, user, '/start {}'.format(query))
 
     if query:
-        bot.send_chat_action(chat_id, ChatAction.TYPING)
+        bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
-        analytics.track(AnalyticsType.MESSAGE, user, query)
+        analytics_handler.track(analytics.AnalyticsType.MESSAGE, user, query)
 
         links_toggle = False
 
-        (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
-            send_no_results_message(bot, chat_id, message_id, query)
+            utils.send_no_results_message(bot, chat_id, message_id, query)
         else:
-            inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+            inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
-            reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+            reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
             definition = definitions[offset]
-            definition_content = definition.input_message_content
+            definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
             definition_text = definition_content.message_text
 
             bot.send_message(
@@ -127,14 +96,14 @@ def start_command_handler(update: Update, context: CallbackContext):
                 reply_to_message_id=message_id
             )
 
-            send_subscription_onboarding_message_if_needed(
+            utils.send_subscription_onboarding_message_if_needed(
                 bot=bot,
                 user=user,
                 chat_id=chat_id
             )
     else:
-        reply_button = InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
-        reply_markup = InlineKeyboardMarkup([[reply_button]])
+        reply_button = telegram.InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
+        reply_markup = telegram.InlineKeyboardMarkup([[reply_button]])
 
         bot.send_message(
             chat_id, (
@@ -144,70 +113,70 @@ def start_command_handler(update: Update, context: CallbackContext):
                 'sau poți să scrii @{} _cuvânt_ în orice alt chat.'
             ).format(BOT_NAME),
             reply_markup=reply_markup,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=telegram.ParseMode.MARKDOWN
         )
 
         return
 
 
-def restart_command_handler(update: Update, context: CallbackContext):
+def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
 
-    Thread(target=stop_and_restart).start()
+    threading.Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(update: Update, context: CallbackContext):
+def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
         bot.send_document(chat_id, open('errors.log', 'rb'))
-    except:
+    except telegram.TelegramError:
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(update: Update, context: CallbackContext):
+def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     args = context.args
 
-    bot.send_message(chat_id, User.get_users_table(
+    bot.send_message(chat_id, database.User.get_users_table(
         sorted_by_updated_at='updated' in args,
         include_only_subscribed='subscribed' in args
-    ), parse_mode=ParseMode.MARKDOWN)
+    ), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def clear_command_handler(update: Update, context: CallbackContext):
+def clear_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.message
     bot = context.bot
 
     chat_id = message.chat_id
 
-    if not check_admin(bot, message, analytics, ADMIN_USER_ID):
+    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     for query in context.args:
-        bot.send_message(chat_id, clear_definitions_cache(query))
+        bot.send_message(chat_id, utils.clear_definitions_cache(query))
 
 
-def inline_query_handler(update: Update, context: CallbackContext):
+def inline_query_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     inline_query = update.inline_query
     bot = context.bot
 
@@ -224,7 +193,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
             query = inline_query.query
 
         if not query:
-            analytics.track(AnalyticsType.EMPTY_QUERY, user, None)
+            analytics_handler.track(analytics.AnalyticsType.EMPTY_QUERY, user, None)
 
             return
 
@@ -251,7 +220,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     definitions_count = len(definitions)
 
@@ -260,11 +229,11 @@ def inline_query_handler(update: Update, context: CallbackContext):
 
     if definitions_count == 0:
         no_results_text = 'Niciun rezultat'
-        no_results_parameter = base64_encode(query)
+        no_results_parameter = utils.base64_encode(query) if query is not None else ''
     else:
-        definitions = definitions[:MAX_INLINE_QUERY_RESULTS]
+        definitions = definitions[:telegram.constants.MAX_INLINE_QUERY_RESULTS]
 
-    cache_time = int(RESULTS_CACHE_TIME.total_seconds())
+    cache_time = int(constants.RESULTS_CACHE_TIME.total_seconds())
 
     if cli_args.debug:
         cache_time = 0
@@ -272,7 +241,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
     next_offset = None
 
     if definitions_count > len(definitions):
-        next_offset = offset + MAX_INLINE_QUERY_RESULTS
+        next_offset = offset + telegram.constants.MAX_INLINE_QUERY_RESULTS
 
     inline_query.answer(
         definitions,
@@ -283,7 +252,7 @@ def inline_query_handler(update: Update, context: CallbackContext):
     )
 
 
-def message_handler(update: Update, context: CallbackContext):
+def message_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     message = update.effective_message
     bot = context.bot
 
@@ -298,23 +267,23 @@ def message_handler(update: Update, context: CallbackContext):
     if len(message.entities) > 0:
         return
 
-    bot.send_chat_action(chat_id, ChatAction.TYPING)
+    bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
 
-    analytics.track(AnalyticsType.MESSAGE, user, query)
+    analytics_handler.track(analytics.AnalyticsType.MESSAGE, user, query)
 
     links_toggle = False
 
-    (definitions, offset) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+    (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
-        send_no_results_message(bot, chat_id, message_id, query)
+        utils.send_no_results_message(bot, chat_id, message_id, query)
     else:
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+        inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
-        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+        reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition = definitions[offset]
-        definition_content = definition.input_message_content
+        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
         definition_text = definition_content.message_text
 
         bot.send_message(
@@ -325,14 +294,14 @@ def message_handler(update: Update, context: CallbackContext):
             reply_to_message_id=message_id
         )
 
-    send_subscription_onboarding_message_if_needed(
+    utils.send_subscription_onboarding_message_if_needed(
         bot=bot,
         user=user,
         chat_id=chat_id
     )
 
 
-def message_answer_handler(update: Update, context: CallbackContext):
+def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     callback_query = update.callback_query
     bot = context.bot
 
@@ -356,21 +325,21 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
     links_toggle = False
 
-    if BUTTON_DATA_LINKS_TOGGLE_KEY in callback_data:
-        links_toggle = callback_data[BUTTON_DATA_LINKS_TOGGLE_KEY]
+    if constants.BUTTON_DATA_LINKS_TOGGLE_KEY in callback_data:
+        links_toggle = callback_data[constants.BUTTON_DATA_LINKS_TOGGLE_KEY]
 
-    if BUTTON_DATA_SUBSCRIPTION_STATE_KEY in callback_data:
-        state: int = callback_data[BUTTON_DATA_SUBSCRIPTION_STATE_KEY]
+    if constants.BUTTON_DATA_SUBSCRIPTION_STATE_KEY in callback_data:
+        state: int = callback_data[constants.BUTTON_DATA_SUBSCRIPTION_STATE_KEY]
         user_id = update.effective_user.id
 
-        db_user: User = User.get_or_none(User.telegram_id == user_id)
+        db_user: database.User = database.User.get_or_none(database.User.telegram_id == user_id)
 
         if db_user is not None:
             is_toggling_links = state is None
 
             if is_toggling_links:
-                is_active = db_user.subscription != User.Subscription.revoked.value
-                definition = get_word_of_the_day_definition(
+                is_active = db_user.subscription != database.User.Subscription.revoked.value
+                definition = utils.get_word_of_the_day_definition(
                     links_toggle=links_toggle,
                     cli_args=cli_args,
                     bot_name=BOT_NAME,
@@ -379,7 +348,7 @@ def message_answer_handler(update: Update, context: CallbackContext):
 
                 reply_markup = definition.reply_markup
 
-                definition_content = definition.input_message_content
+                definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
                 definition_text = definition_content.message_text
                 parse_mode = definition_content.parse_mode
 
@@ -392,19 +361,19 @@ def message_answer_handler(update: Update, context: CallbackContext):
                     disable_web_page_preview=True
                 )
             else:
-                subscription = User.Subscription(state)
+                subscription = database.User.Subscription(state)
 
                 db_user.subscription = subscription.value
                 db_user.save()
 
-                if BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
+                if constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
                     bot.delete_message(
                         chat_id=chat_id,
                         message_id=message_id
                     )
                 else:
-                    is_active = db_user.subscription != User.Subscription.revoked.value
-                    reply_markup = InlineKeyboardMarkup(get_subscription_notification_inline_keyboard_buttons(
+                    is_active = db_user.subscription != database.User.Subscription.revoked.value
+                    reply_markup = telegram.InlineKeyboardMarkup(utils.get_subscription_notification_inline_keyboard_buttons(
                         links_toggle=links_toggle,
                         with_stop=is_active
                     ))
@@ -412,17 +381,17 @@ def message_answer_handler(update: Update, context: CallbackContext):
                     callback_query.edit_message_reply_markup(reply_markup)
 
     else:
-        query = callback_data[BUTTON_DATA_QUERY_KEY]
-        offset = callback_data[BUTTON_DATA_OFFSET_KEY]
+        query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
+        offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
 
-        (definitions, _) = get_query_definitions(update, query, links_toggle, analytics, cli_args, BOT_NAME)
+        (definitions, _offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
+        inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
-        reply_markup = InlineKeyboardMarkup(inline_keyboard_buttons)
+        reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
 
         definition = definitions[offset]
-        definition_content = definition.input_message_content
+        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
         definition_text = definition_content.message_text
 
         if is_inline:
@@ -444,10 +413,10 @@ def message_answer_handler(update: Update, context: CallbackContext):
             )
 
 
-def word_of_the_day_job_handler(context: CallbackContext):
-    bot: QueueBot = context.bot
+def word_of_the_day_job_handler(context: telegram.ext.CallbackContext):
+    bot: queue_bot.QueueBot = context.bot
 
-    definition = get_word_of_the_day_definition(
+    definition = utils.get_word_of_the_day_definition(
         links_toggle=False,
         cli_args=cli_args,
         bot_name=BOT_NAME,
@@ -457,11 +426,11 @@ def word_of_the_day_job_handler(context: CallbackContext):
     reply_markup = definition.reply_markup
     image_url = definition.url
 
-    definition_content = definition.input_message_content
+    definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
     definition_text = definition_content.message_text
     parse_mode = definition_content.parse_mode
 
-    users = User.select().where(User.subscription == User.Subscription.accepted.value)
+    users = database.User.select().where(database.User.subscription == database.User.Subscription.accepted.value)
 
     for user in users:
         id = user.telegram_id
@@ -481,38 +450,37 @@ def word_of_the_day_job_handler(context: CallbackContext):
             disable_notification=True
         )
 
-    if ADMIN_USER_ID is not None:
-        sent_messages = len(users)
+    sent_messages = len(users)
 
-        bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
+    bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
 
 
-def error_handler(update: Update, context: CallbackContext):
+def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
     logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
-def main():
+def main() -> None:
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler('start', start_command_handler, pass_args=True))
+    dispatcher.add_handler(telegram.ext.CommandHandler('start', start_command_handler, pass_args=True))
 
-    dispatcher.add_handler(CommandHandler('restart', restart_command_handler))
-    dispatcher.add_handler(CommandHandler('logs', logs_command_handler))
-    dispatcher.add_handler(CommandHandler('users', users_command_handler, pass_args=True))
-    dispatcher.add_handler(CommandHandler('clear', clear_command_handler, pass_args=True))
+    dispatcher.add_handler(telegram.ext.CommandHandler('restart', restart_command_handler))
+    dispatcher.add_handler(telegram.ext.CommandHandler('logs', logs_command_handler))
+    dispatcher.add_handler(telegram.ext.CommandHandler('users', users_command_handler, pass_args=True))
+    dispatcher.add_handler(telegram.ext.CommandHandler('clear', clear_command_handler, pass_args=True))
 
-    dispatcher.add_handler(InlineQueryHandler(inline_query_handler))
+    dispatcher.add_handler(telegram.ext.InlineQueryHandler(inline_query_handler))
 
-    dispatcher.add_handler(MessageHandler(Filters.text, message_handler))
-    dispatcher.add_handler(CallbackQueryHandler(message_answer_handler))
-
-    dispatcher.add_error_handler(error_handler)
+    dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text, message_handler))
+    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
 
     if cli_args.debug:
         logger.info('Started polling')
 
         updater.start_polling(timeout=0.01)
     else:
+        dispatcher.add_error_handler(error_handler)
+
         if cli_args.server and not cli_args.polling:
             logger.info('Started webhook')
 
@@ -548,9 +516,7 @@ def main():
 
     logger.info('Bot started. Press Ctrl-C to stop.')
 
-    if ADMIN_USER_ID is not None:
-        updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
-
+    updater.bot.send_message(ADMIN_USER_ID, 'Bot has been restarted')
     updater.idle()
 
 
@@ -593,49 +559,49 @@ if __name__ == '__main__':
 
         sys.exit(2)
 
-    request = Request(con_pool_size=8)
-    queue_bot = QueueBot(
+    request = telegram.utils.request.Request(con_pool_size=8)
+    queue_bot = queue_bot.QueueBot(
         token=BOT_TOKEN,
         request=request
     )
-    updater = QueueUpdater(
+    updater = queue_updater.QueueUpdater(
         bot=queue_bot,
         use_context=True
     )
     job_queue = updater.job_queue
-    analytics = Analytics()
+    analytics_handler = analytics.AnalyticsHandler()
 
     try:
-        analytics.googleToken = config.get('Google', 'Key')
+        analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
         logger.warning('Config error: {}'.format(error))
 
-    analytics.userAgent = BOT_NAME
+    analytics_handler.userAgent = BOT_NAME
 
-    requests_cache.install_cache(expire_after=RESULTS_CACHE_TIME)
+    requests_cache.install_cache(expire_after=constants.RESULTS_CACHE_TIME)
 
     if cli_args.query or cli_args.fragment:
-        class Dummy:
-            def __init__(self):
-                self.inline_query = None
+        dummy_inline_query = telegram.InlineQuery(
+            id=0,
+            from_user=telegram.User(
+                id=0,
+                first_name='Dummy',
+                is_bot=False
+            ),
+            query=None,
+            offset=None
+        )
+        dummy_inline_query.answer = (lambda *args, **kwargs: None)
 
-        dummy_update = Dummy()
+        dummy_update = telegram.Update(0)
+        dummy_update.inline_query = dummy_inline_query
 
-        dummy_update.inline_query = Dummy()
+        dummy_context = telegram.ext.CallbackContext(updater.dispatcher)
 
-        dummy_update.inline_query.from_user = Dummy()
-        dummy_update.inline_query.offset = None
-        dummy_update.inline_query.answer = (lambda *args, **kwargs: None)
-
-        dummy_update.inline_query.from_user.id = None
-        dummy_update.inline_query.from_user.first_name = None
-        dummy_update.inline_query.from_user.last_name = None
-        dummy_update.inline_query.from_user.username = None
-
-        inline_query_handler(dummy_update, None)
+        inline_query_handler(dummy_update, dummy_context)
     else:
-        offset = datetime.timedelta(hours=2)
-        timezone = datetime.timezone(offset)
+        timezone_offset = datetime.timedelta(hours=2)
+        timezone = datetime.timezone(timezone_offset)
         time = datetime.time(
             hour=12,
             minute=0,
