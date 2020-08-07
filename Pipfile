@@ -15,6 +15,7 @@ requests-cache = "*"
 
 [dev-packages]
 fabric = "*"
+invocations = "*"
 
 [requires]
 python_version = "3.7"
