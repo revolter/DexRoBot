@@ -384,7 +384,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
         offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
 
-        (definitions, _) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
+        (definitions, _offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
 
