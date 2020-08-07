@@ -27,6 +27,7 @@ class GlobalConfig:
         'analytics.py',
         'constants.py',
 
+        'custom_logger.py',
         'parsed_definition.py',
         'queue_bot.py',
         'queue_updater.py',
