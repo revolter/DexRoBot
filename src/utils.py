@@ -11,7 +11,6 @@ import typing
 import urllib.parse
 import uuid
 
-import lxml
 import lxml.etree
 import lxml.html.builder
 import regex

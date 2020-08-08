@@ -12,7 +12,6 @@ import threading
 import typing
 
 import requests_cache
-import telegram
 import telegram.ext
 import telegram.utils.request
 
