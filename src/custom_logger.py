@@ -4,7 +4,7 @@ import constants
 
 
 class LoggerFilter(logging.Filter):
-    def __init__(self, level: int, name: str = '') -> None:
+    def __init__(self, level: int, name='') -> None:
         super().__init__(name=name)
 
         self.level = level
