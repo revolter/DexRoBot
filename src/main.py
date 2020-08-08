@@ -42,14 +42,14 @@ def stop_and_restart() -> None:
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-def create_or_update_user(bot: queue_bot.QueueBot, user: database.User) -> None:
+def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
     if db_user is not None:
         bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -119,7 +119,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         return
 
 
-def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -131,7 +131,7 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
     threading.Thread(target=stop_and_restart).start()
 
 
-def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def logs_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -146,7 +146,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
         bot.send_message(chat_id, 'Log is empty')
 
 
-def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def users_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -163,7 +163,7 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
     ), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
-def clear_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def clear_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
     bot = context.bot
 
@@ -176,7 +176,7 @@ def clear_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         bot.send_message(chat_id, utils.clear_definitions_cache(query))
 
 
-def inline_query_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def inline_query_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     inline_query = update.inline_query
     bot = context.bot
 
@@ -193,7 +193,7 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
             query = inline_query.query
 
         if not query:
-            analytics_handler.track(analytics.AnalyticsType.EMPTY_QUERY, user, None)
+            analytics_handler.track(analytics.AnalyticsType.EMPTY_QUERY, user)
 
             return
 
@@ -252,7 +252,7 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
     )
 
 
-def message_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.effective_message
     bot = context.bot
 
@@ -301,7 +301,7 @@ def message_handler(update: telegram.Update, context: telegram.ext.CallbackConte
     )
 
 
-def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def message_answer_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     callback_query = update.callback_query
     bot = context.bot
 
@@ -413,7 +413,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
             )
 
 
-def word_of_the_day_job_handler(context: telegram.ext.CallbackContext):
+def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
     bot: queue_bot.QueueBot = context.bot
 
     definition = utils.get_word_of_the_day_definition(
@@ -455,7 +455,7 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext):
     bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
 
 
-def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext):
+def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
 
 
