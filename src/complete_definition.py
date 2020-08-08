@@ -15,3 +15,4 @@ class CompleteDefinition:
     inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]
 
     image_url: typing.Optional[str] = None
+    image_author: typing.Optional[str] = None

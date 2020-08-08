@@ -357,6 +357,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     year = raw_record['year']
     reason = raw_record['reason']
     image_url = raw_record['image']
+    image_author = raw_record['imageAuthor']
 
     raw_definition = raw_record['definition']
 
@@ -386,6 +387,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
         inline_keyboard_buttons=inline_keyboard_buttons
     )
     completed_definition_data.image_url = image_url
+    completed_definition_data.image_author = image_author
 
     return completed_definition_data
 
