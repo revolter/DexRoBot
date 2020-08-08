@@ -24,7 +24,7 @@ height="288">
 ### Word of the day feature
 
 <img alt="Word of the day screenshot" src="images/screenshot_wotd@2x.png"
-width="414" height="681">
+width="414" height="729">
 
 ## Getting Started
 
