@@ -50,9 +50,9 @@ def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
 
         bot.send_message(
             chat_id=ADMIN_USER_ID,
-            text='{} {}'.format(
-                telegram_utils.escape_v2_markdown_text(prefix),
-                db_user.get_markdown_description()
+            text=(
+                f'{telegram_utils.escape_v2_markdown_text(prefix)} '
+                f'{db_user.get_markdown_description()}'
             ),
             parse_mode=telegram.ParseMode.MARKDOWN_V2
         )
@@ -75,7 +75,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     create_or_update_user(bot, user)
 
-    analytics_handler.track(analytics.AnalyticsType.COMMAND, user, '/start {}'.format(query))
+    analytics_handler.track(analytics.AnalyticsType.COMMAND, user, f'/start {query}')
 
     if query:
         bot.send_chat_action(chat_id, telegram.ChatAction.TYPING)
@@ -122,12 +122,11 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
         bot.send_message(
             chat_id=chat_id,
-            text='{} {}{}\n{}{} {} {}'.format(
-                telegram_utils.escape_v2_markdown_text(first_phrase),
-                link, telegram_utils.ESCAPED_FULL_STOP,
+            text=(
+                f'{telegram_utils.escape_v2_markdown_text(first_phrase)} {link}{telegram_utils.ESCAPED_FULL_STOP}\n'
 
-                telegram_utils.escape_v2_markdown_text(second_phrase_1), BOT_NAME,
-                second_phrase_2, telegram_utils.escape_v2_markdown_text(second_phrase_3)
+                f'{telegram_utils.escape_v2_markdown_text(second_phrase_1)}{BOT_NAME} '
+                f'{second_phrase_2} {telegram_utils.escape_v2_markdown_text(second_phrase_3)}'
             ),
             reply_markup=reply_markup,
             parse_mode=telegram.ParseMode.MARKDOWN_V2
@@ -219,25 +218,25 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
             return
 
     if not cli_args.server:
-        user_identification = '#{}'.format(user.id)
+        user_identification = f'#{user.id}'
         user_name = None
 
         if user.first_name and user.last_name:
-            user_name = '{} {}'.format(user.first_name, user.last_name)
+            user_name = f'{user.first_name} {user.last_name}'
         elif user.first_name:
             user_name = user.first_name
         elif user.last_name:
             user_name = user.last_name
 
         if user_name:
-            user_identification += ': {}'.format(user_name)
+            user_identification += f': {user_name}'
 
         if user.username:
-            user_identification += ' (@{})'.format(user.username)
+            user_identification += f' (@{user.username})'
 
         user_identification += ':'
 
-        logger.info('{} {}'.format(user_identification, query))
+        logger.info(f'{user_identification} {query}')
 
     links_toggle = False
 
@@ -398,9 +397,9 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                 bot.send_message(
                     chat_id=ADMIN_USER_ID,
-                    text='{} {}'.format(
-                        telegram_utils.escape_v2_markdown_text(prefix),
-                        db_user.get_markdown_subscription_description()
+                    text=(
+                        f'{telegram_utils.escape_v2_markdown_text(prefix)} '
+                        f'{db_user.get_markdown_subscription_description()}'
                     ),
                     parse_mode=telegram.ParseMode.MARKDOWN_V2
                 )
@@ -459,7 +458,7 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
         bot.queue_photo(
             chat_id=id,
             photo=definition.image_url,
-            caption='© imagine {}'.format(definition.image_author),
+            caption=f'© imagine {definition.image_author}',
             disable_notification=True
         )
 
@@ -467,12 +466,12 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
 
     bot.queue_message(
         chat_id=ADMIN_USER_ID,
-        text='Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else '')
+        text=f'''Sent {sent_messages} word of the day message{'s' if sent_messages > 1 else ''}'''
     )
 
 
 def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
-    logger.error('Update "{}" caused error "{}"'.format(json.dumps(update.to_dict(), indent=4), context.error))
+    logger.error(f'Update "{json.dumps(update.to_dict(), indent=4)}" caused error "{context.error}"')
 
 
 def main() -> None:
@@ -566,7 +565,7 @@ if __name__ == '__main__':
 
         ADMIN_USER_ID = config.getint('Telegram', 'Admin')
     except configparser.Error as error:
-        logger.error('Config error: {}'.format(error))
+        logger.error(f'Config error: {error}')
 
         sys.exit(1)
 
@@ -590,7 +589,7 @@ if __name__ == '__main__':
     try:
         analytics_handler.googleToken = config.get('Google', 'Key')
     except configparser.Error as error:
-        logger.warning('Config error: {}'.format(error))
+        logger.warning(f'Config error: {error}')
 
     analytics_handler.userAgent = BOT_NAME
 
