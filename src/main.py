@@ -116,8 +116,8 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
             url='http://dexonline.ro'
         )
 
-        second_phrase_1 = 'Poți scrie direct cuvântul căutat aici în chat sau poți să scrii @'
-        second_phrase_2 = '_cuvânt_'
+        second_phrase_1 = 'Poți scrie direct cuvântul căutat aici în chat sau poți să scrii "@'
+        second_phrase_2 = '_cuvânt_"'
         second_phrase_3 = 'în orice alt chat.'
 
         bot.send_message(
