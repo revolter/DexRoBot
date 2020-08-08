@@ -42,7 +42,7 @@ def stop_and_restart() -> None:
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
-def create_or_update_user(bot: queue_bot.QueueBot, user: database.User) -> None:
+def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
     if db_user is not None:
