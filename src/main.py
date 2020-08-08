@@ -394,6 +394,17 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                     callback_query.edit_message_reply_markup(reply_markup)
 
+                prefix = 'Subscription update:'
+
+                bot.send_message(
+                    chat_id=ADMIN_USER_ID,
+                    text='{} {}'.format(
+                        telegram_utils.escape_v2_markdown_text(prefix),
+                        db_user.get_markdown_subscription_description()
+                    ),
+                    parse_mode=telegram.ParseMode.MARKDOWN_V2
+                )
+
     else:
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
         offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
@@ -454,7 +465,10 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
 
     sent_messages = len(users)
 
-    bot.queue_message(ADMIN_USER_ID, 'Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else ''))
+    bot.queue_message(
+        chat_id=ADMIN_USER_ID,
+        text='Sent {} word of the day message{}'.format(sent_messages, 's' if sent_messages > 1 else '')
+    )
 
 
 def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:

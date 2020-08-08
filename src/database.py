@@ -66,12 +66,17 @@ class User(BaseModel):
             url='tg://user?id={}'.format(self.telegram_id)
         )
 
-        return '{}{} {} {} {} {} {} {}'.format(
+        return '{}{} {} {} {} {}'.format(
             self.rowid, telegram_utils.ESCAPED_FULL_STOP,
             telegram_utils.ESCAPED_VERTICAL_LINE,
             user_id,
             telegram_utils.ESCAPED_VERTICAL_LINE,
-            username,
+            username
+        )
+
+    def get_markdown_subscription_description(self) -> str:
+        return '{} {} {}'.format(
+            self.get_markdown_description(),
             telegram_utils.ESCAPED_VERTICAL_LINE,
             User.Subscription(self.subscription).name
         )
@@ -134,7 +139,7 @@ class User(BaseModel):
 
             for user in reversed(query):
                 users_table += '\n{} {} {} {} {}'.format(
-                    user.get_markdown_description(),
+                    user.get_markdown_subscription_description(),
                     telegram_utils.ESCAPED_VERTICAL_LINE,
 
                     telegram_utils.escape_v2_markdown_text(user.get_created_at()),
