@@ -3,7 +3,6 @@
 
 import queue
 
-import telegram
 import telegram.ext
 
 
