@@ -193,7 +193,7 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
             query = inline_query.query
 
         if not query:
-            analytics_handler.track(analytics.AnalyticsType.EMPTY_QUERY, user, None)
+            analytics_handler.track(analytics.AnalyticsType.EMPTY_QUERY, user)
 
             return
 
