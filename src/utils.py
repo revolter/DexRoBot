@@ -46,13 +46,13 @@ def get_no_results_message(query: str) -> str:
         url=url
     )
 
-    first_phrase = 'Niciun rezultat găsit pentru "{}".'.format(query)
+    first_phrase = f'Niciun rezultat găsit pentru "{query}".'
     second_phrase = 'Incearcă o căutare in tot textul definițiilor'
 
-    return '{} {} {}{}'.format(
-        telegram_utils.escape_v2_markdown_text(first_phrase),
-        telegram_utils.escape_v2_markdown_text(second_phrase),
-        url_text, telegram_utils.ESCAPED_FULL_STOP
+    return (
+        f'{telegram_utils.escape_v2_markdown_text(first_phrase)} '
+        f'{telegram_utils.escape_v2_markdown_text(second_phrase)} '
+        f'{url_text}{telegram_utils.ESCAPED_FULL_STOP}'
     )
 
 
@@ -71,7 +71,7 @@ def get_raw_response(api_url: str) -> typing.Dict[str, typing.Any]:
     api_final_url = api_request.url
 
     if not api_final_url.endswith(constants.DEX_API_JSON_PATH):
-        api_request = requests.get('{}{}'.format(api_final_url, constants.DEX_API_JSON_PATH))
+        api_request = requests.get(f'{api_final_url}{constants.DEX_API_JSON_PATH}')
 
     return api_request.json()
 
@@ -80,22 +80,19 @@ def create_definition_url(raw_definition: typing.Dict[str, typing.Any], url: str
     id = raw_definition['id']
     url_escaped = url.replace(' ', '')
 
-    return '{}/{}'.format(url_escaped, id)
+    return f'{url_escaped}/{id}'
 
 
 def create_footer(raw_definition: typing.Dict[str, typing.Any], definition_url: str) -> str:
     source_name = raw_definition['sourceName']
     author = raw_definition['userNick']
 
-    author_url = '{}/{}'.format(constants.DEX_AUTHOR_URL, urllib.parse.quote(author))
+    author_url = f'{constants.DEX_AUTHOR_URL}/{urllib.parse.quote(author)}'
 
     return (
-        '{}\n'
-        'sursa: <a href="{}">{}</a> '
-        'adăugată de: <a href="{}">{}</a>'
-    ).format(
-        definition_url, constants.DEX_SOURCES_URL, source_name,
-        author_url, author
+        f'{definition_url}\n'
+        f'sursa: <a href="{constants.DEX_SOURCES_URL}">{source_name}</a> '
+        f'adăugată de: <a href="{author_url}">{author}</a>'
     )
 
 
@@ -128,7 +125,7 @@ def replace_superscripts(root: lxml.html.HtmlElement, definition_url: str) -> No
         if superscript_text:
             sup.text = superscript_text
         else:
-            logger.warning('Unsupported superscript "{}" in definition "{}"'.format(sup_text, definition_url))
+            logger.warning(f'Unsupported superscript "{sup_text}" in definition "{definition_url}"')
 
 
 def get_word_link(word: str, bot_name: str) -> str:
@@ -229,7 +226,7 @@ def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str
             definition_text_content += extra_text_content
 
     if cli_args.debug:
-        definition_title = '{}: {}'.format(definition_index, definition_title)
+        definition_title = f'{definition_index}: {definition_title}'
 
     definition_title = definition_title[:constants.MESSAGE_TITLE_LENGTH_LIMIT]
 
@@ -237,11 +234,11 @@ def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str
         definition_title = definition_title[:- len(constants.ELLIPSIS)]
         definition_title += constants.ELLIPSIS
 
-    definition_html_text += '{}{}'.format(constants.DEFINITION_AND_FOOTER_SEPARATOR, footer)
+    definition_html_text += f'{constants.DEFINITION_AND_FOOTER_SEPARATOR}{footer}'
     definition_html_text += suffix
 
     if cli_args.debug:
-        logger.info('Result: {}: {}'.format(definition_index, definition_html_text))
+        logger.info(f'Result: {definition_index}: {definition_html_text}')
 
     return parsed_definition.ParsedDefinition(
         index=definition_index,
@@ -373,8 +370,8 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
         repl='',
         string=api_url
     )
-    prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
-    suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
+    prefix = f'<b>Cuvântul zilei {day}.{month}.{year}:</b>\n\n'
+    suffix = f'\n\n<b>Cheia alegerii:</b> {reason}'
 
     parsed_definition_data = get_parsed_definition(
         raw_definition=raw_definition,
@@ -407,9 +404,9 @@ def clear_definitions_cache(query: str) -> str:
     if cache.has_url(api_url):
         cache.delete_url(api_url)
 
-        return 'Cache successfully deleted for "{}"'.format(query)
+        return f'Cache successfully deleted for "{query}"'
     else:
-        return 'No cache for "{}"'.format(query)
+        return f'No cache for "{query}"'
 
 
 def get_superscript(text: str) -> typing.Optional[str]:
@@ -440,7 +437,7 @@ def get_definition_inline_keyboard_buttons(query: typing.Optional[str], definiti
         next_offset = offset + 1
 
         previous_text = constants.PREVIOUS_OVERLAP_PAGE_ICON if is_first_page else constants.PREVIOUS_PAGE_ICON
-        current_text = '{} / {}'.format(offset + 1, definitions_count)
+        current_text = f'{offset + 1} / {definitions_count}'
         next_text = constants.NEXT_OVERLAP_PAGE_ICON if is_last_page else constants.NEXT_PAGE_ICON
 
         if is_first_page:

@@ -10,18 +10,18 @@ GOOGLE_ANALYTICS_BASE_URL = 'https://www.google-analytics.com/collect?v=1&t=even
 LOGS_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 GENERIC_DATE_FORMAT = '%Y-%m-%d'
-GENERIC_DATE_TIME_FORMAT = '{} %H:%M:%S'.format(GENERIC_DATE_FORMAT)
+GENERIC_DATE_TIME_FORMAT = f'{GENERIC_DATE_FORMAT} %H:%M:%S'
 
 EPOCH_DATE = datetime.datetime(1970, 1, 1)
 
 DEX_BASE_URL = 'https://dexonline.ro'
 
 DEX_API_JSON_PATH = '/json'
-DEX_API_SUFFIX_REGEX = regex.compile(r'{}(\?t=\d+)?'.format(DEX_API_JSON_PATH))
+DEX_API_SUFFIX_REGEX = regex.compile(fr'{DEX_API_JSON_PATH}(\?t=\d+)?')
 
-DEX_DEFINITION_API_URL_FORMAT = '{}/definitie/{{}}{}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
-DEX_WORD_OF_THE_DAY_URL = '{}/cuvantul-zilei{}?t={{}}'.format(DEX_BASE_URL, DEX_API_JSON_PATH)
-DEX_SEARCH_URL_FORMAT = '{}/text/{{}}'.format(DEX_BASE_URL)
+DEX_DEFINITION_API_URL_FORMAT = f'{DEX_BASE_URL}/definitie/{{}}{DEX_API_JSON_PATH}'
+DEX_WORD_OF_THE_DAY_URL = f'{DEX_BASE_URL}/cuvantul-zilei{DEX_API_JSON_PATH}?t={{}}'
+DEX_SEARCH_URL_FORMAT = f'{DEX_BASE_URL}/text/{{}}'
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'
 DEX_SOURCES_URL = 'https://dexonline.ro/surse'
