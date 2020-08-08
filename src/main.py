@@ -22,6 +22,7 @@ import custom_logger
 import database
 import queue_bot
 import queue_updater
+import telegram_utils
 import utils
 
 custom_logger.configure_root_logger()
@@ -46,7 +47,16 @@ def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
     db_user = database.User.create_or_update_user(user.id, user.username)
 
     if db_user is not None:
-        bot.send_message(ADMIN_USER_ID, 'New user: {}'.format(db_user.get_markdown_description()), parse_mode=telegram.ParseMode.MARKDOWN)
+        prefix = 'New user:'
+
+        bot.send_message(
+            chat_id=ADMIN_USER_ID,
+            text='{} {}'.format(
+                telegram_utils.escape_v2_markdown_text(prefix),
+                db_user.get_markdown_description()
+            ),
+            parse_mode=telegram.ParseMode.MARKDOWN_V2
+        )
 
 
 def start_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
@@ -101,15 +111,27 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         reply_button = telegram.InlineKeyboardButton('Încearcă', switch_inline_query='cuvânt')
         reply_markup = telegram.InlineKeyboardMarkup([[reply_button]])
 
+        first_phrase = 'Salut, sunt un bot care caută definiții pentru cuvinte folosind'
+        link = telegram_utils.escape_v2_markdown_text_link(
+            text='dexonline.ro',
+            url='http://dexonline.ro'
+        )
+
+        second_phrase_1 = 'Poți scrie direct cuvântul căutat aici în chat sau poți să scrii @'
+        second_phrase_2 = '_cuvânt_'
+        second_phrase_3 = 'în orice alt chat.'
+
         bot.send_message(
-            chat_id, (
-                'Salut, sunt un bot care caută definiții pentru cuvinte folosind '
-                '[dexonline.ro](http://dexonline.ro).\n'
-                'Poți scrie direct cuvântul căutat aici în chat '
-                'sau poți să scrii @{} _cuvânt_ în orice alt chat.'
-            ).format(BOT_NAME),
+            chat_id=chat_id,
+            text='{} {}{}\n{}{} {} {}'.format(
+                telegram_utils.escape_v2_markdown_text(first_phrase),
+                link, telegram_utils.ESCAPED_FULL_STOP,
+
+                telegram_utils.escape_v2_markdown_text(second_phrase_1), BOT_NAME,
+                second_phrase_2, telegram_utils.escape_v2_markdown_text(second_phrase_3)
+            ),
             reply_markup=reply_markup,
-            parse_mode=telegram.ParseMode.MARKDOWN
+            parse_mode=telegram.ParseMode.MARKDOWN_V2
         )
 
         return
@@ -153,10 +175,14 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     args = context.args
 
-    bot.send_message(chat_id, database.User.get_users_table(
-        sorted_by_updated_at='updated' in args,
-        include_only_subscribed='subscribed' in args
-    ), parse_mode=telegram.ParseMode.MARKDOWN)
+    bot.send_message(
+        chat_id=chat_id,
+        text=database.User.get_users_table(
+            sorted_by_updated_at='updated' in args,
+            include_only_subscribed='subscribed' in args
+        ),
+        parse_mode=telegram.ParseMode.MARKDOWN_V2
+    )
 
 
 def clear_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:

@@ -17,6 +17,7 @@ import lxml.html.builder
 import regex
 import requests
 import requests_cache
+import telegram_utils
 import telegram
 
 import analytics
@@ -41,19 +42,26 @@ def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler:
 
 def get_no_results_message(query: str) -> str:
     url = constants.DEX_SEARCH_URL_FORMAT.format(urllib.parse.quote(query))
+    url_text = telegram_utils.escape_v2_markdown_text_link(
+        text='aici',
+        url=url
+    )
 
-    message = (
-        'Niciun rezultat găsit pentru "{}". '
-        'Incearcă o căutare in tot textul definițiilor [aici]({}).'
-    ).format(query, url)
+    first_phrase = 'Niciun rezultat găsit pentru "{}".'.format(query)
+    second_phrase = 'Incearcă o căutare in tot textul definițiilor'
 
-    return message
+    return '{} {} {}{}'.format(
+        telegram_utils.escape_v2_markdown_text(first_phrase),
+        telegram_utils.escape_v2_markdown_text(second_phrase),
+        url_text, telegram_utils.ESCAPED_FULL_STOP
+    )
 
 
 def send_no_results_message(bot: telegram.Bot, chat_id: int, message_id: int, query: str) -> None:
     bot.send_message(
-        chat_id, get_no_results_message(query),
-        parse_mode=telegram.ParseMode.MARKDOWN,
+        chat_id=chat_id,
+        text=get_no_results_message(query),
+        parse_mode=telegram.ParseMode.MARKDOWN_V2,
         disable_web_page_preview=True,
         reply_to_message_id=message_id
     )
