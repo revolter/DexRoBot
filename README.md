@@ -8,22 +8,22 @@ Romanian words definitions. The bot currently runs as
 
 ### Main functionality
 
-<img alt="Main screenshot 1" src="images/screenshot_main_1.png" width="276"
-height="320"><img alt="Main screenshot 2" src="images/screenshot_main_2.png"
+<img alt="Main screenshot 1" src="images/screenshot_main_1@2x.png" width="276"
+height="320"><img alt="Main screenshot 2" src="images/screenshot_main_2@2x.png"
 width="276" height="320"><img alt="Main screenshot 3"
-src="images/screenshot_main_3.png" width="276" height="320">
+src="images/screenshot_main_3@2x.png" width="276" height="320">
 
 ### Toggle links feature
 
-<img alt="Toggle links screenshot 1" src="images/screenshot_links_1.png"
+<img alt="Toggle links screenshot 1" src="images/screenshot_links_1@2x.png"
 width="276" height="288"><img alt="Toggle links screenshot 2"
-src="images/screenshot_links_2.png" width="276" height="288"><img alt="Toggle
-links screenshot 3" src="images/screenshot_links_3.png" width="276"
+src="images/screenshot_links_2@2x.png" width="276" height="288"><img alt="Toggle
+links screenshot 3" src="images/screenshot_links_3@2x.png" width="276"
 height="288">
 
 ### Word of the day feature
 
-<img alt="Word of the day screenshot" src="images/screenshot_wotd.png"
+<img alt="Word of the day screenshot" src="images/screenshot_wotd@2x.png"
 width="414" height="681">
 
 ## Getting Started
