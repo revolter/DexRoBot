@@ -29,6 +29,7 @@ class GlobalConfig:
 
         'custom_logger.py',
         'parsed_definition.py',
+        'complete_definition.py',
         'queue_bot.py',
         'queue_updater.py',
 

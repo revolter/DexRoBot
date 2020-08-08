@@ -80,18 +80,14 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         if len(definitions) == 0:
             utils.send_no_results_message(bot, chat_id, message_id, query)
         else:
-            inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
-
-            reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
-
             definition = definitions[offset]
-            definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
-            definition_text = definition_content.message_text
+            reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
             bot.send_message(
-                chat_id, definition_text,
+                chat_id=chat_id,
+                text=definition.html,
                 reply_markup=reply_markup,
-                parse_mode=definition_content.parse_mode,
+                parse_mode=telegram.ParseMode.HTML,
                 disable_web_page_preview=True,
                 reply_to_message_id=message_id
             )
@@ -243,8 +239,10 @@ def inline_query_handler(update: telegram.Update, context: telegram.ext.Callback
     if definitions_count > len(definitions):
         next_offset = offset + telegram.constants.MAX_INLINE_QUERY_RESULTS
 
+    definitions_results = list(map(utils.get_inline_query_definition_result, definitions))
+
     inline_query.answer(
-        definitions,
+        results=definitions_results,
         cache_time=cache_time,
         next_offset=next_offset,
         switch_pm_text=no_results_text,
@@ -278,18 +276,14 @@ def message_handler(update: telegram.Update, context: telegram.ext.CallbackConte
     if len(definitions) == 0:
         utils.send_no_results_message(bot, chat_id, message_id, query)
     else:
-        inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
-
-        reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
-
         definition = definitions[offset]
-        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
-        definition_text = definition_content.message_text
+        reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
         bot.send_message(
-            chat_id, definition_text,
+            chat_id=chat_id,
+            text=definition.html,
             reply_markup=reply_markup,
-            parse_mode=definition_content.parse_mode,
+            parse_mode=telegram.ParseMode.HTML,
             disable_web_page_preview=True,
             reply_to_message_id=message_id
         )
@@ -345,19 +339,14 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                     bot_name=BOT_NAME,
                     with_stop=is_active
                 )
-
-                reply_markup = definition.reply_markup
-
-                definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
-                definition_text = definition_content.message_text
-                parse_mode = definition_content.parse_mode
+                reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
                 bot.edit_message_text(
-                    text=definition_text,
+                    text=definition.html,
                     chat_id=chat_id,
                     message_id=message_id,
                     reply_markup=reply_markup,
-                    parse_mode=parse_mode,
+                    parse_mode=telegram.ParseMode.HTML,
                     disable_web_page_preview=True
                 )
             else:
@@ -385,30 +374,24 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
         offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
 
         (definitions, _offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
-
-        inline_keyboard_buttons = utils.get_definition_inline_keyboard_buttons(query, len(definitions), offset, links_toggle)
-
-        reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
-
         definition = definitions[offset]
-        definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
-        definition_text = definition_content.message_text
+        reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
         if is_inline:
             bot.edit_message_text(
-                definition_text,
+                text=definition.html,
                 inline_message_id=message_id,
                 reply_markup=reply_markup,
-                parse_mode=definition_content.parse_mode,
+                parse_mode=telegram.ParseMode.HTML,
                 disable_web_page_preview=True
             )
         else:
             bot.edit_message_text(
-                definition_text,
+                text=definition.html,
                 chat_id=chat_id,
                 message_id=message_id,
                 reply_markup=reply_markup,
-                parse_mode=definition_content.parse_mode,
+                parse_mode=telegram.ParseMode.HTML,
                 disable_web_page_preview=True
             )
 
@@ -422,14 +405,7 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
         bot_name=BOT_NAME,
         with_stop=True
     )
-
-    reply_markup = definition.reply_markup
-    image_url = definition.url
-
-    definition_content = typing.cast(telegram.InputTextMessageContent, definition.input_message_content)
-    definition_text = definition_content.message_text
-    parse_mode = definition_content.parse_mode
-
+    reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
     users = database.User.select().where(database.User.subscription == database.User.Subscription.accepted.value)
 
     for user in users:
@@ -437,16 +413,16 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
 
         bot.queue_message(
             chat_id=id,
-            text=definition_text,
+            text=definition.html,
             reply_markup=reply_markup,
-            parse_mode=parse_mode,
+            parse_mode=telegram.ParseMode.HTML,
             disable_web_page_preview=True,
             disable_notification=True
         )
 
         bot.queue_photo(
             chat_id=id,
-            photo=image_url,
+            photo=definition.image_url,
             disable_notification=True
         )
 

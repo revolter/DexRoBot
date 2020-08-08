@@ -20,6 +20,7 @@ import requests_cache
 import telegram
 
 import analytics
+import complete_definition
 import constants
 import database
 import parsed_definition
@@ -243,8 +244,18 @@ def get_parsed_definition(raw_definition: typing.Dict[str, typing.Any], url: str
     )
 
 
-def get_inline_query_definition_result(definition: parsed_definition.ParsedDefinition, inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]) -> telegram.InlineQueryResultArticle:
-    reply_markup = telegram.InlineKeyboardMarkup(inline_keyboard_buttons)
+def get_complete_definition(definition: parsed_definition.ParsedDefinition, inline_keyboard_buttons: typing.List[typing.List[telegram.InlineKeyboardButton]]) -> complete_definition.CompleteDefinition:
+    return complete_definition.CompleteDefinition(
+        title=definition.title,
+        html=definition.html,
+        url=definition.url,
+
+        inline_keyboard_buttons=inline_keyboard_buttons
+    )
+
+
+def get_inline_query_definition_result(definition: complete_definition.CompleteDefinition) -> telegram.InlineQueryResultArticle:
+    reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
     return telegram.InlineQueryResultArticle(
         id=uuid.uuid4(),
@@ -261,7 +272,7 @@ def get_inline_query_definition_result(definition: parsed_definition.ParsedDefin
     )
 
 
-def get_query_definitions(update: telegram.Update, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[telegram.InlineQueryResultArticle], int]:
+def get_query_definitions(update: telegram.Update, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[complete_definition.CompleteDefinition], int]:
     user = update.effective_user
 
     if cli_args.fragment:
@@ -287,7 +298,7 @@ def get_query_definitions(update: telegram.Update, query: typing.Optional[str], 
     for index in range(definitions_count):
         raw_definitions[index]['index'] = index
 
-    definitions: typing.List[telegram.InlineQueryResultArticle] = []
+    definitions: typing.List[complete_definition.CompleteDefinition] = []
 
     if cli_args.index is not None:
         if cli_args.index >= definitions_count:
@@ -314,25 +325,25 @@ def get_query_definitions(update: telegram.Update, query: typing.Optional[str], 
         analytics_handler.track(analytics.AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
-        definition = get_parsed_definition(
+        parsed_definition_data = get_parsed_definition(
             raw_definition=raw_definition,
             url=url,
             links_toggle=links_toggle,
             cli_args=cli_args,
             bot_name=bot_name
         )
-        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, definition.index, links_toggle)
-        definition_result = get_inline_query_definition_result(
-            definition=definition,
+        inline_keyboard_buttons = get_definition_inline_keyboard_buttons(query, definitions_count, parsed_definition_data.index, links_toggle)
+        complete_definition_data = get_complete_definition(
+            definition=parsed_definition_data,
             inline_keyboard_buttons=inline_keyboard_buttons
         )
 
-        definitions.append(definition_result)
+        definitions.append(complete_definition_data)
 
     return definitions, offset
 
 
-def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> telegram.InlineQueryResultArticle:
+def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> complete_definition.CompleteDefinition:
     timestamp = int(time.time())
     api_url = constants.DEX_WORD_OF_THE_DAY_URL.format(timestamp)
     raw_response = get_raw_response(api_url)
@@ -357,7 +368,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     prefix = '<b>Cuvântul zilei {}.{}.{}:</b>\n\n'.format(day, month, year)
     suffix = '\n\n<b>Cheia alegerii:</b> {}'.format(reason)
 
-    definition = get_parsed_definition(
+    parsed_definition_data = get_parsed_definition(
         raw_definition=raw_definition,
         url=url,
         links_toggle=links_toggle,
@@ -370,14 +381,13 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
         links_toggle=links_toggle,
         with_stop=with_stop
     )
-    definition_result = get_inline_query_definition_result(
-        definition=definition,
+    completed_definition_data = get_complete_definition(
+        definition=parsed_definition_data,
         inline_keyboard_buttons=inline_keyboard_buttons
     )
+    completed_definition_data.image_url = image_url
 
-    definition_result.url = image_url
-
-    return definition_result
+    return completed_definition_data
 
 
 def clear_definitions_cache(query: str) -> str:
