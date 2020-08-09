@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Custom" pattern="file[DexRoBot]:*.py||file[DexRoBot]:*.cfg||file[DexRoBot]:*.ini||file[DexRoBot]:Pipfile||file[DexRoBot]:README.md" />
+</component>
