@@ -380,10 +380,13 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                 db_user.save()
 
                 if constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
-                    bot.delete_message(
-                        chat_id=chat_id,
-                        message_id=message_id
-                    )
+                    try:
+                        bot.delete_message(
+                            chat_id=chat_id,
+                            message_id=message_id
+                        )
+                    except telegram.TelegramError:
+                        pass
                 else:
                     is_active = db_user.subscription != database.User.Subscription.revoked.value
                     reply_markup = telegram.InlineKeyboardMarkup(utils.get_subscription_notification_inline_keyboard_buttons(
