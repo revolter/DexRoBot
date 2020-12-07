@@ -13,7 +13,7 @@ peewee-migrate = "*"
 python-telegram-bot = "12.8"
 regex = "*"
 requests = "*"
-requests-cache = "0.5.2"
+requests-cache = "*"
 
 [tool.poetry.dev-dependencies]
 fabric = "*"
