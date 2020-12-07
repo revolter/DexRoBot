@@ -12,7 +12,7 @@ peewee = "*"
 peewee-migrate = "*"
 python-telegram-bot = "12.8"
 regex = "*"
-requests = "2.24.0"
+requests = "*"
 requests-cache = "0.5.2"
 
 [tool.poetry.dev-dependencies]
