@@ -377,6 +377,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                 subscription = database.User.Subscription(state)
 
                 db_user.subscription = subscription.value
+                db_user.updated_at = database.get_current_datetime()
                 db_user.save()
 
                 if constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
@@ -406,7 +407,6 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                     ),
                     parse_mode=telegram.ParseMode.MARKDOWN_V2
                 )
-
     else:
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
         offset = callback_data[constants.BUTTON_DATA_OFFSET_KEY]
