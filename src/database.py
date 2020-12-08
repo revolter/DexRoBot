@@ -45,6 +45,7 @@ class User(BaseModel):
         accepted = 1
         denied = 2
         revoked = 3
+        blocked = 4
 
     id = peewee.TextField(unique=True, default=uuid.uuid4)
     telegram_id = peewee.BigIntegerField(unique=True)
@@ -103,10 +104,16 @@ class User(BaseModel):
                 'updated_at': current_date_time
             }
 
+            db_user: User
+            is_created: bool
+
             (db_user, is_created) = cls.get_or_create(telegram_id=id, defaults=defaults)
 
             db_user.telegram_username = username
             db_user.updated_at = current_date_time
+
+            if db_user.subscription == User.Subscription.blocked.value:
+                db_user.subscription = User.Subscription.undetermined.value
 
             db_user.save()
 
