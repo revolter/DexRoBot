@@ -477,6 +477,17 @@ def error_handler(update: telegram.Update, context: telegram.ext.CallbackContext
     logger.error(f'Update "{json.dumps(update.to_dict(), indent=4)}" caused error "{context.error}"')
 
 
+def queued_message_error_handler(chat_id: int, exception: Exception) -> None:
+    try:
+        raise exception
+    except telegram.error.Unauthorized:
+        db_user: database.User = database.User.get_or_none(database.User.telegram_id == chat_id)
+
+        if db_user is not None:
+            db_user.subscription = database.User.Subscription.blocked.value
+            db_user.save()
+
+
 def main() -> None:
     dispatcher = updater.dispatcher
 
@@ -580,7 +591,8 @@ if __name__ == '__main__':
     request = telegram.utils.request.Request(con_pool_size=8)
     queue_bot = queue_bot.QueueBot(
         token=BOT_TOKEN,
-        request=request
+        request=request,
+        exception_handler=queued_message_error_handler
     )
     updater = queue_updater.QueueUpdater(
         bot=queue_bot,
