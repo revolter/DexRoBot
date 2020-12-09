@@ -102,7 +102,7 @@ class User(BaseModel):
         )
 
     @classmethod
-    def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
+    def create_or_update_user(cls, id: int, username: str, bot: telegram.Bot, admin_id: int) -> typing.Optional[User]:
         current_date_time = get_current_datetime()
 
         try:
@@ -122,6 +122,14 @@ class User(BaseModel):
 
             if db_user.subscription == User.Subscription.blocked.value:
                 db_user.subscription = User.Subscription.undetermined.value
+
+                subscription_update_message = db_user.get_subscription_update_message()
+
+                telegram_utils.send_subscription_update_message(
+                    bot=bot,
+                    chat_id=admin_id,
+                    text=subscription_update_message
+                )
 
             db_user.save()
 

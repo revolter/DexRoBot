@@ -43,7 +43,12 @@ def stop_and_restart() -> None:
 
 
 def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
-    db_user = database.User.create_or_update_user(user.id, user.username)
+    db_user = database.User.create_or_update_user(
+        id=user.id,
+        username=user.username,
+        bot=bot,
+        admin_id=ADMIN_USER_ID
+    )
 
     if db_user is not None:
         prefix = 'New user:'
@@ -484,6 +489,14 @@ def queued_message_error_handler(chat_id: int, exception: Exception) -> None:
         if db_user is not None and db_user.subscription != blocked_status:
             db_user.subscription = blocked_status
             db_user.save()
+
+            subscription_update_message = db_user.get_subscription_update_message()
+
+            telegram_utils.send_subscription_update_message(
+                bot=queue_bot,
+                chat_id=ADMIN_USER_ID,
+                text=subscription_update_message
+            )
 
 
 def main() -> None:
