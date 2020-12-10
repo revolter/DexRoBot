@@ -397,15 +397,12 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                     callback_query.edit_message_reply_markup(reply_markup)
 
-                prefix = 'Subscription update:'
+                subscription_update_message = db_user.get_subscription_update_message()
 
-                bot.send_message(
+                telegram_utils.send_subscription_update_message(
+                    bot=bot,
                     chat_id=ADMIN_USER_ID,
-                    text=(
-                        f'{telegram_utils.escape_v2_markdown_text(prefix)} '
-                        f'{db_user.get_markdown_subscription_description()}'
-                    ),
-                    parse_mode=telegram.ParseMode.MARKDOWN_V2
+                    text=subscription_update_message
                 )
     else:
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]

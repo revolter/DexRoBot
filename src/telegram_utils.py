@@ -47,6 +47,14 @@ def send_no_results_message(bot: telegram.Bot, chat_id: int, message_id: int, qu
     )
 
 
+def send_subscription_update_message(bot: telegram.Bot, chat_id: int, text: str) -> None:
+    bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode=telegram.ParseMode.MARKDOWN_V2
+    )
+
+
 def escape_v2_markdown_text(text: str, entity_type: typing.Optional[str] = None) -> str:
     return telegram.utils.helpers.escape_markdown(
         text=text,

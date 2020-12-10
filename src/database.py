@@ -93,6 +93,14 @@ class User(BaseModel):
 
         return f'{time_ago} ago'
 
+    def get_subscription_update_message(self) -> str:
+        prefix = 'Subscription update:'
+
+        return (
+            f'{telegram_utils.escape_v2_markdown_text(prefix)} '
+            f'{self.get_markdown_subscription_description()}'
+        )
+
     @classmethod
     def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
         current_date_time = get_current_datetime()
