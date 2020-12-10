@@ -43,7 +43,12 @@ def stop_and_restart() -> None:
 
 
 def create_or_update_user(bot: queue_bot.QueueBot, user: telegram.User) -> None:
-    db_user = database.User.create_or_update_user(user.id, user.username)
+    db_user = database.User.create_or_update_user(
+        id=user.id,
+        username=user.username,
+        bot=bot,
+        admin_id=ADMIN_USER_ID
+    )
 
     if db_user is not None:
         prefix = 'New user:'
@@ -87,7 +92,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
-            utils.send_no_results_message(bot, chat_id, message_id, query)
+            telegram_utils.send_no_results_message(bot, chat_id, message_id, query)
         else:
             definition = definitions[offset]
             reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
@@ -139,7 +144,7 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
     message = update.message
     bot = context.bot
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -153,7 +158,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -168,7 +173,7 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     args = context.args
@@ -189,7 +194,7 @@ def clear_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     for query in context.args:
@@ -298,7 +303,7 @@ def message_handler(update: telegram.Update, context: telegram.ext.CallbackConte
     (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
-        utils.send_no_results_message(bot, chat_id, message_id, query)
+        telegram_utils.send_no_results_message(bot, chat_id, message_id, query)
     else:
         definition = definitions[offset]
         reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
@@ -377,7 +382,6 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                 subscription = database.User.Subscription(state)
 
                 db_user.subscription = subscription.value
-                db_user.updated_at = database.get_current_datetime()
                 db_user.save()
 
                 if constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY in callback_data:
@@ -397,15 +401,12 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
                     callback_query.edit_message_reply_markup(reply_markup)
 
-                prefix = 'Subscription update:'
+                subscription_update_message = db_user.get_subscription_update_message()
 
-                bot.send_message(
+                telegram_utils.send_subscription_update_message(
+                    bot=bot,
                     chat_id=ADMIN_USER_ID,
-                    text=(
-                        f'{telegram_utils.escape_v2_markdown_text(prefix)} '
-                        f'{db_user.get_markdown_subscription_description()}'
-                    ),
-                    parse_mode=telegram.ParseMode.MARKDOWN_V2
+                    text=subscription_update_message
                 )
     else:
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
@@ -482,10 +483,19 @@ def queued_message_error_handler(chat_id: int, exception: Exception) -> None:
         raise exception
     except telegram.error.Unauthorized:
         db_user: database.User = database.User.get_or_none(database.User.telegram_id == chat_id)
+        blocked_status = database.User.Subscription.blocked.value
 
-        if db_user is not None:
-            db_user.subscription = database.User.Subscription.blocked.value
+        if db_user is not None and db_user.subscription != blocked_status:
+            db_user.subscription = blocked_status
             db_user.save()
+
+            subscription_update_message = db_user.get_subscription_update_message()
+
+            telegram_utils.send_subscription_update_message(
+                bot=queue_bot,
+                chat_id=ADMIN_USER_ID,
+                text=subscription_update_message
+            )
 
 
 def main() -> None:

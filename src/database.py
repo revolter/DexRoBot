@@ -93,27 +93,44 @@ class User(BaseModel):
 
         return f'{time_ago} ago'
 
+    def get_subscription_update_message(self) -> str:
+        prefix = 'Subscription update:'
+
+        return (
+            f'{telegram_utils.escape_v2_markdown_text(prefix)} '
+            f'{self.get_markdown_subscription_description()}'
+        )
+
+    def save(self, force_insert=False, only=None):
+        self.updated_at = get_current_datetime()
+
+        super().save(
+            force_insert=force_insert,
+            only=only
+        )
+
     @classmethod
-    def create_or_update_user(cls, id: int, username: str) -> typing.Optional[User]:
-        current_date_time = get_current_datetime()
-
+    def create_or_update_user(cls, id: int, username: str, bot: telegram.Bot, admin_id: int) -> typing.Optional[User]:
         try:
-            defaults = {
-                'telegram_username': username,
-
-                'updated_at': current_date_time
-            }
-
             db_user: User
             is_created: bool
 
-            (db_user, is_created) = cls.get_or_create(telegram_id=id, defaults=defaults)
+            (db_user, is_created) = cls.get_or_create(telegram_id=id, defaults={
+                'telegram_username': username
+            })
 
             db_user.telegram_username = username
-            db_user.updated_at = current_date_time
 
             if db_user.subscription == User.Subscription.blocked.value:
                 db_user.subscription = User.Subscription.undetermined.value
+
+                subscription_update_message = db_user.get_subscription_update_message()
+
+                telegram_utils.send_subscription_update_message(
+                    bot=bot,
+                    chat_id=admin_id,
+                    text=subscription_update_message
+                )
 
             db_user.save()
 
