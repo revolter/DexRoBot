@@ -87,7 +87,7 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
         (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
         if len(definitions) == 0:
-            utils.send_no_results_message(bot, chat_id, message_id, query)
+            telegram_utils.send_no_results_message(bot, chat_id, message_id, query)
         else:
             definition = definitions[offset]
             reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
@@ -139,7 +139,7 @@ def restart_command_handler(update: telegram.Update, context: telegram.ext.Callb
     message = update.message
     bot = context.bot
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     bot.send_message(message.chat_id, 'Restarting...')
@@ -153,7 +153,7 @@ def logs_command_handler(update: telegram.Update, context: telegram.ext.Callback
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     try:
@@ -168,7 +168,7 @@ def users_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     args = context.args
@@ -189,7 +189,7 @@ def clear_command_handler(update: telegram.Update, context: telegram.ext.Callbac
 
     chat_id = message.chat_id
 
-    if not utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
+    if not telegram_utils.check_admin(bot, message, analytics_handler, ADMIN_USER_ID):
         return
 
     for query in context.args:
@@ -298,7 +298,7 @@ def message_handler(update: telegram.Update, context: telegram.ext.CallbackConte
     (definitions, offset) = utils.get_query_definitions(update, query, links_toggle, analytics_handler, cli_args, BOT_NAME)
 
     if len(definitions) == 0:
-        utils.send_no_results_message(bot, chat_id, message_id, query)
+        telegram_utils.send_no_results_message(bot, chat_id, message_id, query)
     else:
         definition = definitions[offset]
         reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
