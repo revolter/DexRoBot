@@ -479,9 +479,10 @@ def queued_message_error_handler(chat_id: int, exception: Exception) -> None:
         raise exception
     except telegram.error.Unauthorized:
         db_user: database.User = database.User.get_or_none(database.User.telegram_id == chat_id)
+        blocked_status = database.User.Subscription.blocked.value
 
-        if db_user is not None:
-            db_user.subscription = database.User.Subscription.blocked.value
+        if db_user is not None and db_user.subscription != blocked_status:
+            db_user.subscription = blocked_status
             db_user.save()
 
 
