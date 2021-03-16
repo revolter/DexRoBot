@@ -3,16 +3,22 @@
 import typing
 import urllib.parse
 
+import telegram.ext
 import telegram.utils.helpers
 
 import analytics
 import constants
 
 
-def check_admin(bot: telegram.Bot, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
-    analytics_handler.track(analytics.AnalyticsType.COMMAND, message.from_user, message.text)
+def check_admin(bot: telegram.Bot, context: telegram.ext.CallbackContext, message: telegram.Message, analytics_handler: analytics.AnalyticsHandler, admin_user_id: int) -> bool:
+    user = message.from_user
 
-    if message.from_user.id != admin_user_id:
+    if user is None:
+        return False
+
+    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, message.text)
+
+    if user.id != admin_user_id:
         bot.send_message(message.chat_id, 'You are not allowed to use this command')
 
         return False
