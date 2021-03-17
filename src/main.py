@@ -578,10 +578,10 @@ def main() -> None:
     dispatcher.add_handler(telegram.ext.CommandHandler('users', users_command_handler, pass_args=True))
     dispatcher.add_handler(telegram.ext.CommandHandler('clear', clear_command_handler, pass_args=True))
 
-    dispatcher.add_handler(telegram.ext.InlineQueryHandler(inline_query_handler))
+    dispatcher.add_handler(telegram.ext.InlineQueryHandler(inline_query_handler, run_async=True))
 
-    dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text, message_handler))
-    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler))
+    dispatcher.add_handler(telegram.ext.MessageHandler(telegram.ext.Filters.text, message_handler, run_async=True))
+    dispatcher.add_handler(telegram.ext.CallbackQueryHandler(message_answer_handler, run_async=True))
 
     if cli_args.debug:
         logger.info('Started polling')
