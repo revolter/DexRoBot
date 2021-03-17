@@ -527,10 +527,13 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
             disable_notification=True
         )
 
+        url = definition.image_url
+        caption = f'© imagine {definition.image_author}'
+
         telegram_queue_bot.queue_photo(
             chat_id=id,
-            photo=definition.image_url,
-            caption=f'© imagine {definition.image_author}',
+            photo=url,
+            caption=caption,
             disable_notification=True
         )
 
