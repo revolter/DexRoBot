@@ -528,14 +528,24 @@ def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
         )
 
         url = definition.image_url
-        caption = f'© imagine {definition.image_author}'
 
-        telegram_queue_bot.queue_photo(
-            chat_id=id,
-            photo=url,
-            caption=caption,
-            disable_notification=True
-        )
+        if url is not None:
+            caption = f'© imagine {definition.image_author}'
+
+            if url.endswith('gif'):
+                telegram_queue_bot.queue_animation(
+                    chat_id=id,
+                    animation=url,
+                    caption=caption,
+                    disable_notification=True
+                )
+            else:
+                telegram_queue_bot.queue_photo(
+                    chat_id=id,
+                    photo=url,
+                    caption=caption,
+                    disable_notification=True
+                )
 
     sent_messages = len(users)
 

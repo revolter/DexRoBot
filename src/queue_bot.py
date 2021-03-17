@@ -39,3 +39,12 @@ class QueueBot(telegram.Bot):
             self.exception_handler(chat_id, exception)
 
         return None
+
+    @telegram.ext.messagequeue.queuedmessage
+    def queue_animation(self, chat_id, *args, **kwargs) -> typing.Optional[telegram.Message]:
+        try:
+            return super().send_animation(chat_id=chat_id, *args, **kwargs)
+        except Exception as exception:
+            self.exception_handler(chat_id, exception)
+
+        return None
