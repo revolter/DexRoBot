@@ -101,7 +101,7 @@ class User(BaseModel):
             f'{self.get_markdown_subscription_description()}'
         )
 
-    def save(self, force_insert=False, only=None):
+    def save(self, force_insert=False, only=None) -> None:
         self.updated_at = get_current_datetime()
 
         super().save(
@@ -110,7 +110,7 @@ class User(BaseModel):
         )
 
     @classmethod
-    def create_or_update_user(cls, id: int, username: str, bot: telegram.Bot, admin_id: int) -> typing.Optional[User]:
+    def create_or_update_user(cls, id: int, username: typing.Optional[str], bot: telegram.Bot, admin_id: int) -> typing.Optional[User]:
         try:
             db_user: User
             is_created: bool

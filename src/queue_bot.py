@@ -23,15 +23,19 @@ class QueueBot(telegram.Bot):
             pass
 
     @telegram.ext.messagequeue.queuedmessage
-    def queue_message(self, chat_id, *args, **kwargs) -> telegram.Message:
+    def queue_message(self, chat_id, *args, **kwargs) -> typing.Optional[telegram.Message]:
         try:
             return super().send_message(chat_id=chat_id, *args, **kwargs)
         except Exception as exception:
             self.exception_handler(chat_id, exception)
 
+        return None
+
     @telegram.ext.messagequeue.queuedmessage
-    def queue_photo(self, chat_id, *args, **kwargs) -> telegram.Message:
+    def queue_photo(self, chat_id, *args, **kwargs) -> typing.Optional[telegram.Message]:
         try:
             return super().send_photo(chat_id=chat_id, *args, **kwargs)
         except Exception as exception:
             self.exception_handler(chat_id, exception)
+
+        return None

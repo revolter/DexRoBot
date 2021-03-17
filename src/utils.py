@@ -17,6 +17,7 @@ import regex
 import requests
 import requests_cache
 import telegram
+import telegram.ext
 
 import analytics
 import complete_definition
@@ -223,7 +224,7 @@ def get_inline_query_definition_result(definition: complete_definition.CompleteD
     reply_markup = telegram.InlineKeyboardMarkup(definition.inline_keyboard_buttons)
 
     return telegram.InlineQueryResultArticle(
-        id=uuid.uuid4(),
+        id=str(uuid.uuid4()),
         title=definition.title,
         thumb_url=constants.DEX_THUMBNAIL_URL,
         url=definition.url,
@@ -237,7 +238,7 @@ def get_inline_query_definition_result(definition: complete_definition.CompleteD
     )
 
 
-def get_query_definitions(update: telegram.Update, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[complete_definition.CompleteDefinition], int]:
+def get_query_definitions(update: telegram.Update, context: telegram.ext.CallbackContext, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[complete_definition.CompleteDefinition], int]:
     user = update.effective_user
 
     if cli_args.fragment:
@@ -276,18 +277,20 @@ def get_query_definitions(update: telegram.Update, query: typing.Optional[str], 
     offset_string = None
     offset = 0
 
-    is_inline_query = update.inline_query is not None
+    inline_query = update.inline_query
+    is_inline_query = False
 
-    if is_inline_query:
-        offset_string = update.inline_query.offset
+    if inline_query is not None:
+        offset_string = inline_query.offset
+        is_inline_query = True
 
     if offset_string:
         offset = int(offset_string)
 
         if offset < definitions_count:
             raw_definitions = raw_definitions[offset + 1:]
-    elif is_inline_query:
-        analytics_handler.track(analytics.AnalyticsType.INLINE_QUERY, user, query)
+    elif is_inline_query and user is not None:
+        analytics_handler.track(context, analytics.AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
         parsed_definition_data = get_parsed_definition(
@@ -456,7 +459,7 @@ def get_definition_inline_keyboard_buttons(query: typing.Optional[str], definiti
     return buttons
 
 
-def send_subscription_onboarding_message_if_needed(bot: telegram.Bot, user: database.User, chat_id: int) -> None:
+def send_subscription_onboarding_message_if_needed(bot: telegram.Bot, user: telegram.User, chat_id: int) -> None:
     db_user = database.User.get_or_none(database.User.telegram_id == user.id)
 
     if db_user is None:
