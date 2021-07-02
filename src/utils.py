@@ -316,7 +316,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     api_url = constants.DEX_WORD_OF_THE_DAY_URL_FORMAT.format(timestamp)
     raw_response = get_raw_response(api_url)
 
-    day = raw_response['day']
+    raw_day = raw_response['day']
     month = raw_response['month']
 
     raw_requested = raw_response['requested']
@@ -328,6 +328,8 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     image_author = raw_record['imageAuthor']
 
     raw_definition = raw_record['definition']
+
+    day = f'{raw_day:0>2}'
 
     url = regex.sub(
         pattern=constants.DEX_API_SUFFIX_REGEX,
