@@ -389,6 +389,11 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
     message_id: typing.Union[str, int]
 
+    wotd_date: typing.Optional[str] = None
+
+    if constants.BUTTON_DATA_DATE_KEY in callback_data:
+        wotd_date = callback_data[constants.BUTTON_DATA_DATE_KEY]
+
     if is_inline:
         inline_message_id = callback_query.inline_message_id
 
@@ -408,6 +413,19 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
         chat_id = callback_message.chat_id
         message_id = callback_message.message_id
+
+        if wotd_date is None:
+            text = callback_message.text
+            match = constants.WORD_OF_THE_DAY_DATE_REGEX.search(text)
+
+            if match is not None:
+                raw_day = match.group('day')
+                month = match.group('month')
+                year = match.group('year')
+
+                day = f'{raw_day:0>2}'
+
+                wotd_date = f'{year}/{month}/{day}'
 
     links_toggle = False
 
@@ -433,6 +451,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
             if is_toggling_links:
                 is_active = db_user.subscription != database.User.Subscription.revoked.value
                 definition = utils.get_word_of_the_day_definition(
+                    date=wotd_date,
                     links_toggle=links_toggle,
                     cli_args=cli_args,
                     bot_name=BOT_NAME,
@@ -465,6 +484,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                 else:
                     is_active = db_user.subscription != database.User.Subscription.revoked.value
                     reply_markup = telegram.InlineKeyboardMarkup(utils.get_subscription_notification_inline_keyboard_buttons(
+                        date=wotd_date,
                         links_toggle=links_toggle,
                         with_stop=is_active
                     ))
@@ -507,6 +527,7 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
 
 def word_of_the_day_job_handler(context: telegram.ext.CallbackContext) -> None:
     definition = utils.get_word_of_the_day_definition(
+        date=None,
         links_toggle=False,
         cli_args=cli_args,
         bot_name=BOT_NAME,

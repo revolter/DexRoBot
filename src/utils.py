@@ -311,12 +311,16 @@ def get_query_definitions(update: telegram.Update, context: telegram.ext.Callbac
     return definitions, offset
 
 
-def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> complete_definition.CompleteDefinition:
-    timestamp = int(time.time())
-    api_url = constants.DEX_WORD_OF_THE_DAY_URL.format(timestamp)
+def get_word_of_the_day_definition(date: typing.Optional[str], links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> complete_definition.CompleteDefinition:
+    if date is not None:
+        api_url = constants.DEX_SPECIFIC_WORD_OF_THE_DAY_URL_FORMAT.format(date)
+    else:
+        timestamp = int(time.time())
+        api_url = constants.DEX_TODAY_WORD_OF_THE_DAY_URL_FORMAT.format(timestamp)
+
     raw_response = get_raw_response(api_url)
 
-    day = raw_response['day']
+    raw_day = raw_response['day']
     month = raw_response['month']
 
     raw_requested = raw_response['requested']
@@ -328,6 +332,8 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
     image_author = raw_record['imageAuthor']
 
     raw_definition = raw_record['definition']
+
+    day = f'{raw_day:0>2}'
 
     url = regex.sub(
         pattern=constants.DEX_API_SUFFIX_REGEX,
@@ -347,6 +353,7 @@ def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namesp
         suffix=suffix
     )
     inline_keyboard_buttons = get_subscription_notification_inline_keyboard_buttons(
+        date=f'{year}/{month}/{day}',
         links_toggle=links_toggle,
         with_stop=with_stop
     )
@@ -501,8 +508,9 @@ def get_subscription_onboarding_inline_keyboard_buttons() -> typing.List[typing.
     return [[no_button, yes_button]]
 
 
-def get_subscription_notification_inline_keyboard_buttons(links_toggle=False, with_stop=True) -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
+def get_subscription_notification_inline_keyboard_buttons(date: typing.Optional[str], links_toggle=False, with_stop=True) -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
     links_toggle_data = {
+        constants.BUTTON_DATA_DATE_KEY: date,
         constants.BUTTON_DATA_LINKS_TOGGLE_KEY: not links_toggle,
         constants.BUTTON_DATA_SUBSCRIPTION_STATE_KEY: None
     }
