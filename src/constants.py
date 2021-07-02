@@ -20,7 +20,7 @@ DEX_API_JSON_PATH = '/json'
 DEX_API_SUFFIX_REGEX = regex.compile(fr'{DEX_API_JSON_PATH}(\?t=\d+)?')
 
 DEX_DEFINITION_API_URL_FORMAT = f'{DEX_BASE_URL}/definitie/{{}}{DEX_API_JSON_PATH}'
-DEX_WORD_OF_THE_DAY_URL = f'{DEX_BASE_URL}/cuvantul-zilei{DEX_API_JSON_PATH}?t={{}}'
+DEX_WORD_OF_THE_DAY_URL_FORMAT = f'{DEX_BASE_URL}/cuvantul-zilei{DEX_API_JSON_PATH}?t={{}}'
 DEX_SEARCH_URL_FORMAT = f'{DEX_BASE_URL}/text/{{}}'
 
 DEX_THUMBNAIL_URL = 'https://dexonline.ro/img/logo/logo-og.png'

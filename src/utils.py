@@ -313,7 +313,7 @@ def get_query_definitions(update: telegram.Update, context: telegram.ext.Callbac
 
 def get_word_of_the_day_definition(links_toggle: bool, cli_args: argparse.Namespace, bot_name: str, with_stop=False) -> complete_definition.CompleteDefinition:
     timestamp = int(time.time())
-    api_url = constants.DEX_WORD_OF_THE_DAY_URL.format(timestamp)
+    api_url = constants.DEX_WORD_OF_THE_DAY_URL_FORMAT.format(timestamp)
     raw_response = get_raw_response(api_url)
 
     day = raw_response['day']
