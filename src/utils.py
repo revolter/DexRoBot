@@ -73,8 +73,19 @@ def get_html(raw_definition: typing.Dict[str, typing.Any]) -> lxml.html.HtmlElem
     fragments = lxml.html.fragments_fromstring(html_rep)
     root = lxml.html.Element('root')
 
+    text: typing.Optional[str] = None
+
     for fragment in fragments:
+        if not isinstance(fragment, lxml.html.HtmlElement):
+            if isinstance(fragment, str):
+                text = fragment
+
+            continue
+
         root.append(fragment)
+
+    if text is not None and len(root) > 0:
+        root[0].text = f'{text}{root[0].text}'
 
     return root
 
