@@ -170,16 +170,17 @@ def subscribe_command_handler(update: telegram.Update, context: telegram.ext.Cal
     if db_user is None:
         return
 
-    db_user.subscription = database.User.Subscription.accepted.value
-    db_user.save()
+    if db_user.subscription != database.User.Subscription.accepted.value:
+        db_user.subscription = database.User.Subscription.accepted.value
+        db_user.save()
 
-    subscription_update_message = db_user.get_subscription_update_message()
+        subscription_update_message = db_user.get_subscription_update_message()
 
-    telegram_utils.send_subscription_update_message(
-        bot=telegram_queue_bot,
-        chat_id=ADMIN_USER_ID,
-        text=subscription_update_message
-    )
+        telegram_utils.send_subscription_update_message(
+            bot=telegram_queue_bot,
+            chat_id=ADMIN_USER_ID,
+            text=subscription_update_message
+        )
 
     utils.send_subscription_accepted_message_if_needed(
         bot=bot,
