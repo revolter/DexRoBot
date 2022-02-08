@@ -146,8 +146,6 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
             parse_mode=telegram.ParseMode.MARKDOWN_V2
         )
 
-        return
-
 
 def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
     message = update.message
