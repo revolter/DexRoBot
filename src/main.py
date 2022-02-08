@@ -146,7 +146,38 @@ def start_command_handler(update: telegram.Update, context: telegram.ext.Callbac
             parse_mode=telegram.ParseMode.MARKDOWN_V2
         )
 
+
+def subscribe_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
+    message = update.message
+
+    if message is None:
         return
+
+    bot = context.bot
+    user = message.from_user
+
+    if user is None:
+        return
+
+    create_or_update_user(bot, user)
+
+    analytics_handler.track(context, analytics.AnalyticsType.COMMAND, user, '/subscribe')
+
+    db_user: database.User = database.User.get_or_none(database.User.telegram_id == user.id)
+
+    if db_user is None:
+        return
+
+    db_user.subscription = database.User.Subscription.accepted.value
+    db_user.save()
+
+    subscription_update_message = db_user.get_subscription_update_message()
+
+    telegram_utils.send_subscription_update_message(
+        bot=telegram_queue_bot,
+        chat_id=ADMIN_USER_ID,
+        text=subscription_update_message
+    )
 
 
 def restart_command_handler(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
@@ -606,6 +637,7 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(telegram.ext.CommandHandler('start', start_command_handler, pass_args=True))
+    dispatcher.add_handler(telegram.ext.CommandHandler('subscribe', subscribe_command_handler))
 
     dispatcher.add_handler(telegram.ext.CommandHandler('restart', restart_command_handler))
     dispatcher.add_handler(telegram.ext.CommandHandler('logs', logs_command_handler))
