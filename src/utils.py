@@ -495,6 +495,21 @@ def send_subscription_onboarding_message_if_needed(bot: telegram.Bot, user: tele
     )
 
 
+def send_subscription_accepted_message_if_needed(bot: telegram.Bot, user: telegram.User, chat_id: int) -> None:
+    db_user = database.User.get_or_none(database.User.telegram_id == user.id)
+
+    if db_user is None:
+        return
+
+    if db_user.subscription != database.User.Subscription.accepted.value:
+        return
+
+    bot.send_message(
+        chat_id=chat_id,
+        text='Te-ai abonat să primești cuvântul zilei!',
+    )
+
+
 def get_subscription_onboarding_inline_keyboard_buttons() -> typing.List[typing.List[telegram.InlineKeyboardButton]]:
     no_data = {
         constants.BUTTON_DATA_IS_SUBSCRIPTION_ONBOARDING_KEY: True,

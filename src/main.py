@@ -154,6 +154,8 @@ def subscribe_command_handler(update: telegram.Update, context: telegram.ext.Cal
         return
 
     bot = context.bot
+
+    chat_id = message.chat_id
     user = message.from_user
 
     if user is None:
@@ -177,6 +179,12 @@ def subscribe_command_handler(update: telegram.Update, context: telegram.ext.Cal
         bot=telegram_queue_bot,
         chat_id=ADMIN_USER_ID,
         text=subscription_update_message
+    )
+
+    utils.send_subscription_accepted_message_if_needed(
+        bot=bot,
+        user=user,
+        chat_id=chat_id
     )
 
 
@@ -528,6 +536,12 @@ def message_answer_handler(update: telegram.Update, context: telegram.ext.Callba
                     bot=bot,
                     chat_id=ADMIN_USER_ID,
                     text=subscription_update_message
+                )
+
+                utils.send_subscription_accepted_message_if_needed(
+                    bot=bot,
+                    user=user,
+                    chat_id=chat_id
                 )
     else:
         query: typing.Optional[str] = callback_data[constants.BUTTON_DATA_QUERY_KEY]
