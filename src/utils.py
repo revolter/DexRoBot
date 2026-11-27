@@ -19,7 +19,6 @@ import requests_cache
 import telegram
 import telegram.ext
 
-import analytics
 import complete_definition
 import constants
 import database
@@ -249,9 +248,7 @@ def get_inline_query_definition_result(definition: complete_definition.CompleteD
     )
 
 
-def get_query_definitions(update: telegram.Update, context: telegram.ext.CallbackContext, query: typing.Optional[str], links_toggle: bool, analytics_handler: analytics.AnalyticsHandler, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[complete_definition.CompleteDefinition], int]:
-    user = update.effective_user
-
+def get_query_definitions(update: telegram.Update, query: typing.Optional[str], links_toggle: bool, cli_args: argparse.Namespace, bot_name: str) -> typing.Tuple[typing.List[complete_definition.CompleteDefinition], int]:
     if cli_args.fragment:
         url = 'debug'
 
@@ -289,19 +286,15 @@ def get_query_definitions(update: telegram.Update, context: telegram.ext.Callbac
     offset = 0
 
     inline_query = update.inline_query
-    is_inline_query = False
 
     if inline_query is not None:
         offset_string = inline_query.offset
-        is_inline_query = True
 
     if offset_string:
         offset = int(offset_string)
 
         if offset < definitions_count:
             raw_definitions = raw_definitions[offset + 1:]
-    elif is_inline_query and user is not None:
-        analytics_handler.track(context, analytics.AnalyticsType.INLINE_QUERY, user, query)
 
     for raw_definition in raw_definitions:
         parsed_definition_data = get_parsed_definition(
